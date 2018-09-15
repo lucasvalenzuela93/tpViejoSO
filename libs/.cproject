@@ -39,7 +39,6 @@
 								<option defaultValue="true" id="gnu.c.link.so.debug.option.shared.2104533402" name="Shared (-shared)" superClass="gnu.c.link.so.debug.option.shared" valueType="boolean"/>
 								<option id="gnu.c.link.option.libs.769075005" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="commons"/>
-									<listOptionValue builtIn="false" value="parsi"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.810208717" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
