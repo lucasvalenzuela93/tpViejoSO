@@ -58,3 +58,8 @@ DAM/log.txt
 FileSystem/log.txt
 S-AFA/log.txt
 FunesMemory/log.txt
+
+#Clion
+.idea/
+cmake-build-debug/
+CMakeLists.txt
