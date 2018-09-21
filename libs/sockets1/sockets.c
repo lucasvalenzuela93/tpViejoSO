@@ -186,16 +186,22 @@ void recibirMensaje(int socketEmisor, int tamanioMensaje, char** bufferMensaje){
 
 int servidorConectarComponente(int socketEscucha, char* servidor, char* componente){
 	int socketConectado;
-	char *bufferMensaje, *texto;
+	char *bufferMensaje;
 
-	bufferMensaje = malloc(3);
-	texto = malloc(3 * sizeof(char));
-	strcpy(texto, "OK");
+	bufferMensaje = malloc(3 + sizeof(char) * strlen(componente));
+
+	char* ok_servidor = malloc(3 + strlen(servidor));
+	strcpy(ok_servidor, servidor);
+	strcat(ok_servidor, "OK");
+
+	char* ok_componente = malloc(3 + strlen(componente));
+	strcpy(ok_componente, componente);
+	strcat(ok_componente, "OK");
 
 	socketConectado = aceptarConexion(socketEscucha);
-	recibirMensaje(socketConectado, 2 * sizeof(char), &bufferMensaje);
-
-	if (strcmp(bufferMensaje, "OK") != 0 || enviarMensaje(socketConectado, texto) < 0) {
+	recibirMensaje(socketConectado, strlen(componente) * sizeof(char) + 3, &bufferMensaje);
+	printf("Mensaje recibido: %s\n", bufferMensaje);
+	if (strcmp(bufferMensaje, ok_componente) != 0 || enviarMensaje(socketConectado, ok_servidor) < 0) {
 		printf("Error conectando %s con %s\n", servidor, componente);
 		close(socketConectado);
 		close(socketEscucha);
@@ -204,37 +210,44 @@ int servidorConectarComponente(int socketEscucha, char* servidor, char* componen
 
 
 	free(bufferMensaje);
-	free(texto);
-	printf(" %s y %s estan conetados...\n", servidor, componente);
+	free(ok_servidor);
+	free(ok_componente);
+	printf(" %s y %s conetados...\n", servidor, componente);
 	return socketConectado;
 }
 
 int clienteConectarComponente(char* cliente, char* componente, int puerto, char* ip) {
 
 	int socketServ;
-	char *bufferMensaje, *texto;
+	char *bufferMensaje;
+	bufferMensaje = malloc(3 * sizeof(char) + sizeof(char) * strlen(componente));
 
-	bufferMensaje = malloc(3 * sizeof(char));
-	texto = malloc(3 * sizeof(char));
-	strcpy(texto, "OK");
+	char* ok_cliente = malloc(3 + strlen(cliente));
+	strcpy(ok_cliente, cliente);
+	strcat(ok_cliente, "OK");
+
+	char* ok_componente = malloc(3 + strlen(componente));
+	strcpy(ok_componente, componente);
+	strcat(ok_componente, "OK");
 
 	socketServ = conectarClienteA((int)puerto, ip);
 
-	if (enviarMensaje(socketServ, texto) < 0) {
+	if (enviarMensaje(socketServ, ok_cliente) < 0) {
 		printf("Error conectando %s con %s\n", cliente, componente);
 		close(socketServ);
 		exit(1);
 	} else {
-		recibirMensaje(socketServ, 2 * sizeof(char), &bufferMensaje);
-		if (strcmp(bufferMensaje, "OK") != 0) {
+		recibirMensaje(socketServ, strlen(componente) * sizeof(char) + 3, &bufferMensaje);
+		if (strcmp(bufferMensaje, ok_componente) != 0) {
 			printf("Error conectando %s con %s\n", cliente, componente);
 			close(socketServ);
 			exit(1);
 		}
 	}
-	printf(" %s y %s estan conetados...\n", cliente, componente);
+	printf(" %s y %s conetados...\n", cliente, componente);
 
 	free(bufferMensaje);
-	free(texto);
+	free(ok_cliente);
+	free(ok_componente);
 	return socketServ;
 }

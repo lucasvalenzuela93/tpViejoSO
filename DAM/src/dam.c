@@ -11,6 +11,9 @@
 #include "dam.h"
 
 int main(void) {
-	puts("!!!Hello World!!!"); /* prints !!!Hello World!!! */
+	puts("Iniciando DAM...");
+
+	socketSafa = clienteConectarComponente("DAM","S-AFA", PUERTO, IP);
+
 	return EXIT_SUCCESS;
 }
