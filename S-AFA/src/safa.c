@@ -12,20 +12,17 @@
 #include "safa.h"
 
 int main(void) {
-	crearLogger();
+	inicializarVariables();
 
-	socketEscucha = conectarComoServidor(logger, IP, PUERTO);
-	int nuevoSocketEscuchado = escucharCliente(logger, socketEscucha);
-	list_add(socketsEscuchando, &nuevoSocketEscuchado);
+	socketEscucha = socketServidor(PUERTO, IP, 50);
+	socket_cpu = servidorConectarComponente(socketEscucha, "S-AFA", "CPU");
 
 	return EXIT_SUCCESS;
 }
 
-void crearLogger(){
-	logger = log_create("log.txt","S-AFA",true, LOG_LEVEL_INFO);
-	puts("Log iniciado");
-}
-
 void inicializarVariables(){
-	socketsEscuchando = list_create();
+	logger = log_create("log.txt","S-AFA",true, LOG_LEVEL_INFO);
+
+	puts("Variables inicializadas...");
+
 }

@@ -11,9 +11,10 @@
 #include "cpu.h"
 
 int main(void) {
-
+	puts("Iniciando CPU...");
 	crearLogger();
-	socketSAFA = conectarComoCliente(logger, IP, PUERTO);
+
+	socketSAFA = clienteConectarComponente("CPU","S-AFA", PUERTO, IP);
 
 	return EXIT_SUCCESS;
 }
