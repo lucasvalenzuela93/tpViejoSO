@@ -15,7 +15,7 @@ int main(void) {
 	inicializarVariables();
 
 	socketEscucha = socketServidor(PUERTO, IP, 50);
-	socket_cpu = servidorConectarComponente(socketEscucha, "S-AFA", "CPU");
+
 
 	socket_dam = servidorConectarComponente(socketEscucha, "S-AFA", "DAM");
 	// CREO THREAD PARA QUE ESPERE MENSAJES DEL DAM
@@ -26,6 +26,8 @@ int main(void) {
 		// ERROR AL CREAR EL HILO
 		puts("Error al crear hilo que escucha al DAM...");
 	}
+
+	socket_cpu = servidorConectarComponente(socketEscucha, "S-AFA", "CPU");
 	while(true);
 
 

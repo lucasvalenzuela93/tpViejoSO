@@ -15,6 +15,8 @@ int main(void) {
 	crearLogger();
 
 	socketSAFA = clienteConectarComponente("CPU","S-AFA", PUERTO, IP);
+	socketDam = clienteConectarComponente("CPU","DAM", PUERTO_DAM, IP);
+
 
 	return EXIT_SUCCESS;
 }
