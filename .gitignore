@@ -50,3 +50,11 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+
+#logs
+CPU/log.txt
+DAM/log.txt
+FileSystem/log.txt
+S-AFA/log.txt
+FunesMemory/log.txt

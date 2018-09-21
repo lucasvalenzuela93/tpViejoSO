@@ -10,6 +10,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <commons/collections/list.h>
+#include <sockets/sockets.h>
+#include <sockets1/sockets.h>
+#include <commons/log.h>
+
+const char* IP = "127.0.0.1";
+const int PUERTO = 8000;
+
+t_log *logger;
+int socketSAFA;
+
+void crearLogger();
 
 
 #endif /* SRC_CPU_H_ */
