@@ -188,18 +188,18 @@ int servidorConectarComponente(int socketEscucha, char* servidor, char* componen
 	int socketConectado;
 	char *bufferMensaje;
 
-	bufferMensaje = malloc(3 + sizeof(char) * strlen(componente));
+	bufferMensaje = malloc(2 + sizeof(char) * strlen(componente));
 
-	char* ok_servidor = malloc(3 + strlen(servidor));
+	char* ok_servidor = malloc(2 + strlen(servidor));
 	strcpy(ok_servidor, servidor);
 	strcat(ok_servidor, "OK");
 
-	char* ok_componente = malloc(3 + strlen(componente));
+	char* ok_componente = malloc(2 + strlen(componente));
 	strcpy(ok_componente, componente);
 	strcat(ok_componente, "OK");
 
 	socketConectado = aceptarConexion(socketEscucha);
-	recibirMensaje(socketConectado, strlen(componente) * sizeof(char) + 3, &bufferMensaje);
+	recibirMensaje(socketConectado, strlen(componente) * sizeof(char) + 2, &bufferMensaje);
 	printf("Mensaje recibido: %s\n", bufferMensaje);
 	if (strcmp(bufferMensaje, ok_componente) != 0 || enviarMensaje(socketConectado, ok_servidor) < 0) {
 		printf("Error conectando %s con %s\n", servidor, componente);
@@ -220,13 +220,13 @@ int clienteConectarComponente(char* cliente, char* componente, int puerto, char*
 
 	int socketServ;
 	char *bufferMensaje;
-	bufferMensaje = malloc(3 * sizeof(char) + sizeof(char) * strlen(componente));
+	bufferMensaje = malloc(2 * sizeof(char) + sizeof(char) * strlen(componente));
 
-	char* ok_cliente = malloc(3 + strlen(cliente));
+	char* ok_cliente = malloc(2 + strlen(cliente));
 	strcpy(ok_cliente, cliente);
 	strcat(ok_cliente, "OK");
 
-	char* ok_componente = malloc(3 + strlen(componente));
+	char* ok_componente = malloc(2 + strlen(componente));
 	strcpy(ok_componente, componente);
 	strcat(ok_componente, "OK");
 
@@ -237,7 +237,8 @@ int clienteConectarComponente(char* cliente, char* componente, int puerto, char*
 		close(socketServ);
 		exit(1);
 	} else {
-		recibirMensaje(socketServ, strlen(componente) * sizeof(char) + 3, &bufferMensaje);
+		recibirMensaje(socketServ, strlen(componente) * sizeof(char) + 2, &bufferMensaje);
+		printf("Mensaje recibido: %s\n", bufferMensaje);
 		if (strcmp(bufferMensaje, ok_componente) != 0) {
 			printf("Error conectando %s con %s\n", cliente, componente);
 			close(socketServ);
