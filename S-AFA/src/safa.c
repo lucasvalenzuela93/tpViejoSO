@@ -14,7 +14,8 @@
 int main(void) {
 	inicializarVariables();
 
-	socketEscucha = socketServidor(PUERTO, IP, 50);
+
+	socketEscucha = socketServidor(puertoEscucha, IP, 50);
 
 
 	socket_dam = servidorConectarComponente(socketEscucha, "S-AFA", "DAM");
@@ -37,6 +38,10 @@ int main(void) {
 
 void inicializarVariables(){
 	logger = log_create("log.txt","S-AFA",true, LOG_LEVEL_INFO);
+	// LEVANTO CONFIGURACIONES
+	config = config_create(PATH_CONFIG);
+	IP = config_get_string_value(config, "IP");
+	puertoEscucha = config_get_int_value(config,"PUERTO");
 
 	puts("Variables inicializadas...");
 }
@@ -45,6 +50,11 @@ void finalizarVariables(){
 	shutdown(socket_cpu,2);
 	shutdown(socket_dam,2);
 	shutdown(socketEscucha,2);
+	free(logger);
+	free(IP);
+	free(puertoEscucha);
+	config_destroy(config);
+
 }
 
 void* esperarMensajesDAM(void* socket){
