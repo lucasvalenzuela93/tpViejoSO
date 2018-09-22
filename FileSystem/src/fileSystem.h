@@ -10,6 +10,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sockets1/sockets.h>
+
+
+const char* IP_ESCUCHA = "127.0.0.1";
+const int PUERTO_ESCUCHA = 8100;
+
+int socketEscucha, socketDam;
 
 
 #endif /* SRC_FILESYSTEM_H_ */
