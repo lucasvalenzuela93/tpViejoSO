@@ -16,6 +16,7 @@ int main(void) {
 
 	socketSAFA = clienteConectarComponente("CPU","S-AFA", PUERTO, IP);
 	socketDam = clienteConectarComponente("CPU","DAM", PUERTO_DAM, IP);
+	socketFunesMemory = clienteConectarComponente("CPU","FUNES_MEMORY", PUERTO_FUNES_MEMORY, IP);
 
 
 	return EXIT_SUCCESS;

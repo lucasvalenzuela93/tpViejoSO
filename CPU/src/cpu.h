@@ -18,9 +18,10 @@
 const char* IP = "127.0.0.1";
 const int PUERTO = 8000;
 const int PUERTO_DAM = 8001;
+const int PUERTO_FUNES_MEMORY = 8101;
 
 t_log *logger;
-int socketSAFA, socketDam;
+int socketSAFA, socketDam, socketFunesMemory;
 
 void crearLogger();
 
