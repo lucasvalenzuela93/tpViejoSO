@@ -21,4 +21,6 @@ const int PUERTO_FUNES_MEMORY = 8101;
 int socketSafa, socketEscucha, socketCpu, socketFileSystem, socketFunesMemory;
 
 
+void finalizarVariables();
+
 #endif /* SRC_DAM_H_ */

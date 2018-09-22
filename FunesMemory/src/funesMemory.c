@@ -18,5 +18,13 @@ int main(void) {
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
 	socketCpu = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "CPU");
 
+	finalizarVariables();
+	puts("Finalizo Funes Memory...");
 	return EXIT_SUCCESS;
+}
+
+void finalizarVariables(){
+	shutdown(socketEscucha,2);
+	shutdown(socketDam,2);
+	shutdown(socketCpu,2);
 }

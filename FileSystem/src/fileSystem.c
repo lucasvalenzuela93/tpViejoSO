@@ -17,5 +17,12 @@ int main(void) {
 
 	socketDam = servidorConectarComponente(socketEscucha, "FILE_SYSTEM", "DAM");
 
+	finalizarVariables();
+	puts("Finalizo File System...");
 	return EXIT_SUCCESS;
+}
+
+void finalizarVariables(){
+	shutdown(socketEscucha,2);
+	shutdown(socketDam,2);
 }

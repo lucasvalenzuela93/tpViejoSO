@@ -24,6 +24,7 @@ t_log *logger;
 int socketSAFA, socketDam, socketFunesMemory;
 
 void crearLogger();
+void finalizarVariables();
 
 
 #endif /* SRC_CPU_H_ */
