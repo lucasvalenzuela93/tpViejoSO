@@ -165,7 +165,7 @@ void iniciarConsola() {
 	char *linea, *aux;
 	done = 0;
 	while (done == 0) {
-		linea = readline("user@planificador: ");
+		linea = readline("user@SAFA: ");
 		if (!linea)
 			break;
 		aux = recortarLinea(linea);
@@ -184,6 +184,17 @@ int cmdHola(){
 int cmdSalir(){
 	done = 1;
 	finalizarVariables();
+	return 0;
+}
+int cmdHelp() {
+	register int i;
+	puts("Comando:\t\t\tDescripcion:");
+	for (i = 0; comandos[i].cmd; i++) {
+		if (strlen(comandos[i].cmd) < 7)
+			printf("%s\t\t\t\t%s\n", comandos[i].cmd, comandos[i].info);
+		else
+			printf("%s\t\t\t%s\n", comandos[i].cmd, comandos[i].info);
+	}
 	return 0;
 }
 

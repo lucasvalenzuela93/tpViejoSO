@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sockets/sockets.h>
 #include <sockets1/sockets.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
@@ -30,7 +29,7 @@ typedef struct COMANDO {
 	int parametros;
 } COMANDO;
 
-int cmdHola(),cmdSalir();
+int cmdHola(),cmdSalir(),cmdHelp();
 
 
 t_log *logger;
@@ -38,7 +37,8 @@ int done = 0;
 
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
-		{"salir", cmdSalir, "Termina el proceso", 0}
+		{"salir", cmdSalir, "Termina el proceso", 0},
+		{"help", cmdHelp, "Muestra los posibles comandos de consola", 0}
 };
 
 int socketEscucha,socket_cpu, socket_dam;
