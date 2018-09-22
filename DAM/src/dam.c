@@ -17,7 +17,9 @@ int main(void) {
 
 	socketSafa = clienteConectarComponente("DAM","S-AFA", PUERTO_SAFA, IP_SAFA);
 
-	// DEBE PRIMERO CONECTARSE A FILE SYSTEM Y FUNES MEMORY
+	socketFileSystem = clienteConectarComponente("DAM", "FILE_SYSTEM", PUERTO_FILE_SYSTEM, IP_SAFA);
+
+	// DEBE PRIMERO CONECTARSE FUNES MEMORY
 	// ANTES DE ESCUCHAR CONEXIONES DEL CPU
 
 	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP_SAFA, 50);

@@ -11,6 +11,11 @@
 #include "fileSystem.h"
 
 int main(void) {
-	puts("!!!Hello World!!!"); /* prints !!!Hello World!!! */
+	puts("Iniciando File System...");
+
+	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP_ESCUCHA, 50);
+
+	socketDam = servidorConectarComponente(socketEscucha, "FILE_SYSTEM", "DAM");
+
 	return EXIT_SUCCESS;
 }
