@@ -18,11 +18,17 @@ int main(void) {
 	socketDam = clienteConectarComponente("CPU","DAM", PUERTO_DAM, IP);
 	socketFunesMemory = clienteConectarComponente("CPU","FUNES_MEMORY", PUERTO_FUNES_MEMORY, IP);
 
-
+	finalizarVariables();
+	puts("Finalizo CPU");
 	return EXIT_SUCCESS;
 }
 
 void crearLogger(){
 	logger = log_create("log.txt", "CPU", true, LOG_LEVEL_INFO);
 	puts("Log iniciado");
+}
+void finalizarVariables(){
+	shutdown(socketSAFA,2);
+	shutdown(socketDam,2);
+	shutdown(socketFunesMemory,2);
 }

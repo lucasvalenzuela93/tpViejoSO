@@ -28,5 +28,16 @@ int main(void) {
 
 	socketCpu = servidorConectarComponente(socketEscucha, "DAM", "CPU");
 
+
+	finalizarVariables();
+	puts("Finalizo DAM...");
 	return EXIT_SUCCESS;
+}
+
+void finalizarVariables(){
+	shutdown(socketSafa,2);
+	shutdown(socketFileSystem,2);
+	shutdown(socketFunesMemory,2);
+	shutdown(socketEscucha,2);
+	shutdown(socketCpu,2);
 }

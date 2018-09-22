@@ -17,4 +17,7 @@ const int PUERTO_ESCUCHA = 8101;
 
 int socketEscucha, socketCpu, socketDam;
 
+
+void finalizarVariables();
+
 #endif /* SRC_FUNESMEMORY_H_ */

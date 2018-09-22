@@ -18,5 +18,7 @@ const int PUERTO_ESCUCHA = 8100;
 
 int socketEscucha, socketDam;
 
+void finalizarVariables();
+
 
 #endif /* SRC_FILESYSTEM_H_ */
