@@ -16,6 +16,7 @@ int main(void) {
 	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP, 50);
 
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
+	socketCpu = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "CPU");
 
 	return EXIT_SUCCESS;
 }
