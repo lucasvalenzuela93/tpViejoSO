@@ -11,6 +11,11 @@
 #include "funesMemory.h"
 
 int main(void) {
-	puts("!!!Hello World!!!"); /* prints !!!Hello World!!! */
+	puts("Iniciando Funes Memory...");
+
+	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP, 50);
+
+	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
+
 	return EXIT_SUCCESS;
 }
