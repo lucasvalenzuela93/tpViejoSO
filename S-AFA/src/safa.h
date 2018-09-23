@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <sockets1/sockets.h>
 #include <commons/log.h>
+#include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
 #include <readline/readline.h>
@@ -19,8 +20,8 @@
 #include <string.h>
 
 
-const char* IP = "127.0.0.1";
-const int PUERTO = 8000;
+
+const char* PATH_CONFIG = "../config/config.txt";
 
 typedef struct COMANDO {
 	char* cmd;
@@ -31,9 +32,11 @@ typedef struct COMANDO {
 
 int cmdHola(),cmdSalir(),cmdHelp();
 
-
+t_config *config;
 t_log *logger;
 int done = 0;
+int puertoEscucha;
+char* IP;
 
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
