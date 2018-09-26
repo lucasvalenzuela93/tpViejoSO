@@ -37,19 +37,25 @@ int main(void) {
 }
 
 void inicializarVariables(){
+	puts("Iniciando S-AFA...");
 	logger = log_create("log.txt","S-AFA",true, LOG_LEVEL_INFO);
 	// LEVANTO CONFIGURACIONES
 	config = config_create(PATH_CONFIG);
-	IP = config_get_string_value(config, "IP");
-	puertoEscucha = config_get_int_value(config,"PUERTO");
+	if(config != NULL){
+		IP = config_get_string_value(config, "IP");
+		puertoEscucha = config_get_int_value(config,"PUERTO");
+	}else {
+		puts("Error al crear configuracion");
+	}
+
 
 	puts("Variables inicializadas...");
 }
 
 void finalizarVariables(){
-	shutdown(socket_cpu,2);
-	shutdown(socket_dam,2);
-	shutdown(socketEscucha,2);
+	close(socket_cpu);
+	close(socket_dam);
+	close(socketEscucha);
 	free(logger);
 	free(IP);
 	free(puertoEscucha);

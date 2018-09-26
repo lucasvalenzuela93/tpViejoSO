@@ -21,7 +21,7 @@
 
 
 
-const char* PATH_CONFIG = "../config/config.txt";
+const char* PATH_CONFIG = "./config/config.txt";
 
 typedef struct COMANDO {
 	char* cmd;
@@ -32,7 +32,7 @@ typedef struct COMANDO {
 
 int cmdHola(),cmdSalir(),cmdHelp();
 
-t_config *config;
+t_config* config;
 t_log *logger;
 int done = 0;
 int puertoEscucha;
