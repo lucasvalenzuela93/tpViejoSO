@@ -12,7 +12,7 @@
 
 int main(void) {
 	puts("Iniciando DAM...");
-
+	iniciarVariables();
 
 
 	socketSafa = clienteConectarComponente("DAM","S-AFA", PUERTO_SAFA, IP_SAFA);
@@ -32,6 +32,24 @@ int main(void) {
 	finalizarVariables();
 	puts("Finalizo DAM...");
 	return EXIT_SUCCESS;
+}
+void iniciarVariables(){
+	config = config_create("../config/config.txt");
+	if(config == NULL){
+		puts("Error al abrir archivo de configuracion...");
+		exit(1);
+	}
+	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
+	ipSafa = config_get_string_value(config, "IP_SAFA");
+	ipFileSystem = config_get_string_value(config, "IP_FILE_SYSTEM");
+	ipFunesMemory = config_get_string_value(config, "IP_FUNES_MEMORY");
+
+	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
+	puertoSafa = config_get_int_value(config, "PUERTO_SAFA");
+	puertoFileSystem = config_get_int_value(config, "PUERTO_FILE_SYSTEM");
+	puertoFunesMemory = config_get_int_value(config, "PUERTO_FUNES_MEMORY");
+
+	puts("Variables iniciadas...");
 }
 
 void finalizarVariables(){

@@ -11,16 +11,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sockets1/sockets.h>
+#include <commons/log.h>
+#include <commons/config.h>
+#include <commons/collections/list.h>
 
-const char* IP_SAFA = "127.0.0.1";
-const int PUERTO_SAFA = 8000;
-const int PUERTO_ESCUCHA = 8001;
-const int PUERTO_FILE_SYSTEM = 8100;
-const int PUERTO_FUNES_MEMORY = 8101;
-
+t_config *config;
+int puertoEscucha, puertoSafa, puertoFileSystem, puertoFunesMemory;
+char* ipEscucha, ipSafa, ipFileSystem, ipFunesMemory;
 int socketSafa, socketEscucha, socketCpu, socketFileSystem, socketFunesMemory;
 
-
+void iniciarVariables();
 void finalizarVariables();
 
 #endif /* SRC_DAM_H_ */
