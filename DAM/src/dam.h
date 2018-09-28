@@ -17,7 +17,10 @@
 
 t_config *config;
 int puertoEscucha, puertoSafa, puertoFileSystem, puertoFunesMemory;
-char* ipEscucha, ipSafa, ipFileSystem, ipFunesMemory;
+char* ipEscucha;
+char* ipSafa;
+char* ipFileSystem;
+char* ipFunesMemory;
 int socketSafa, socketEscucha, socketCpu, socketFileSystem, socketFunesMemory;
 
 void iniciarVariables();

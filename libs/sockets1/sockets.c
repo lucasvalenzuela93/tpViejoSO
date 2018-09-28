@@ -200,7 +200,6 @@ int servidorConectarComponente(int socketEscucha, char* servidor, char* componen
 
 	socketConectado = aceptarConexion(socketEscucha);
 	recibirMensaje(socketConectado, strlen(componente) * sizeof(char) + 2, &bufferMensaje);
-	printf("Mensaje recibido: %s\n", bufferMensaje);
 	if (strcmp(bufferMensaje, ok_componente) != 0 || enviarMensaje(socketConectado, ok_servidor) < 0) {
 		printf("Error conectando %s con %s\n", servidor, componente);
 		close(socketConectado);
@@ -238,7 +237,6 @@ int clienteConectarComponente(char* cliente, char* componente, int puerto, char*
 		exit(1);
 	} else {
 		recibirMensaje(socketServ, strlen(componente) * sizeof(char) + 2, &bufferMensaje);
-		printf("Mensaje recibido: %s\n", bufferMensaje);
 		if (strcmp(bufferMensaje, ok_componente) != 0) {
 			printf("Error conectando %s con %s\n", cliente, componente);
 			close(socketServ);
