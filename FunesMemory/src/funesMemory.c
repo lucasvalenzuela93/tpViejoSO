@@ -12,6 +12,7 @@
 
 int main(void) {
 	puts("Iniciando Funes Memory...");
+	iniciarVariables();
 
 	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP, 50);
 
@@ -21,6 +22,17 @@ int main(void) {
 	finalizarVariables();
 	puts("Finalizo Funes Memory...");
 	return EXIT_SUCCESS;
+}
+
+void iniciarVariables(){
+	config = config_create("./config/config.txt");
+	if(config == NULL){
+		puts("Error al leer configuraciones...");
+		finalizarVariables();
+		exit(1);
+	}
+	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
+	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
 }
 
 void finalizarVariables(){
