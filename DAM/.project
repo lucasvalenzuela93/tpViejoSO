@@ -3,6 +3,7 @@
 	<name>DAM</name>
 	<comment></comment>
 	<projects>
+		<project>libs</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -23,4 +24,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>libs</name>
+			<type>2</type>
+			<location>/home/utnso/workspace/tp-2018-2c-keAprobo/libs</location>
+		</link>
+	</linkedResources>
 </projectDescription>
