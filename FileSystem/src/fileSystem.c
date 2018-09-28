@@ -12,6 +12,7 @@
 
 int main(void) {
 	puts("Iniciando File System...");
+	iniciarVariables();
 
 	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP_ESCUCHA, 50);
 
@@ -20,6 +21,20 @@ int main(void) {
 	finalizarVariables();
 	puts("Finalizo File System...");
 	return EXIT_SUCCESS;
+}
+
+void iniciarVariables(){
+	config = config_create("./config/config.txt");
+	if(config == NULL){
+		puts("Error al levantar configuraciones...");
+		finalizarVariables();
+		exit(1);
+	}
+
+	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
+	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
+
+	puts("Variables inicadas...");
 }
 
 void finalizarVariables(){
