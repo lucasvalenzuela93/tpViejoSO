@@ -17,11 +17,11 @@
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <readline/chardefs.h>
 #include <string.h>
 
 
-
-const char* PATH_CONFIG = "./config/config.txt";
+const char* PATH_CONFIG = "../config/config.txt";
 
 typedef struct COMANDO {
 	char* cmd;

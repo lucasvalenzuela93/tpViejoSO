@@ -63,3 +63,5 @@ FunesMemory/log.txt
 .idea/
 cmake-build-debug/
 CMakeLists.txt
+cmake/
+.DS_Store
