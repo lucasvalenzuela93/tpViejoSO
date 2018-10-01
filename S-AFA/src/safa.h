@@ -22,6 +22,8 @@
 
 
 const char* PATH_CONFIG = "./config/config.txt";
+const char* CORRUPTO = "Corrupto";
+const char* OPERATIVO = "Operativo";
 
 typedef struct COMANDO {
 	char* cmd;
@@ -30,6 +32,14 @@ typedef struct COMANDO {
 	int parametros;
 } COMANDO;
 
+
+// falta completar con datos del CPU
+typedef struct CPU {
+	int id;
+	int socket;
+
+} CPU;
+
 int cmdHola(),cmdSalir(),cmdHelp();
 
 t_config* config;
@@ -37,6 +47,12 @@ t_log *logger;
 int done = 0;
 int puertoEscucha;
 char* IP;
+char* estado;
+int maxConex;
+t_list *listaCpu;
+t_list *colaNew;
+t_list *colaReady;
+pthread_mutex_t mutexListaCpu;
 
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
@@ -47,7 +63,7 @@ COMANDO comandos[] = {
 int socketEscucha,socket_cpu, socket_dam;
 
 void inicializarVariables();
-void* esperarMensajesDAM(void*);
+void* conectarComponentes();
 
 void finalizarVariables();
 // ------------------FUNCIONES CONSOLA--------------------

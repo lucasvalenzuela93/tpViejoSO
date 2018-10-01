@@ -14,25 +14,26 @@
 int main(void) {
 	inicializarVariables();
 
-
 	socketEscucha = socketServidor(puertoEscucha, IP, 50);
-
-
 	socket_dam = servidorConectarComponente(socketEscucha, "S-AFA", "DAM");
-	// CREO THREAD PARA QUE ESPERE MENSAJES DEL DAM
-	pthread_t hiloDam;
-	char* componente = malloc(4);
-	strcpy(componente, "DAM");
-	if(pthread_create(&hiloDam,NULL, esperarMensajesDAM, &socket_dam ) != 0){
-		// ERROR AL CREAR EL HILO
-		puts("Error al crear hilo que escucha al DAM...");
+	pthread_t hiloConexiones;
+	if(pthread_create(&hiloConexiones, NULL, conectarComponentes, NULL)){
+		puts("Error al crear el hilo de conexiones...");
 	}
-
-	socket_cpu = servidorConectarComponente(socketEscucha, "S-AFA", "CPU");
+	while(estado == CORRUPTO){
+		if(socket_dam && (list_size(listaCpu) != 0)){
+			estado = OPERATIVO;
+			break;
+		}
+		continue;
+	}
+	puts("S-AFA esta operativo");
 	iniciarConsola();
-
-
-	puts("Finalizo S-AFA...");
+	if(pthread_join(hiloConexiones, NULL)){
+		puts("Error al joinear hilo de conexiones...");
+		return 2;
+	}
+	puts("Finalizo S-AFA correctamente...");
 	return EXIT_SUCCESS;
 }
 
@@ -44,10 +45,12 @@ void inicializarVariables(){
 	if(config != NULL){
 		IP = config_get_string_value(config, "IP");
 		puertoEscucha = config_get_int_value(config,"PUERTO");
+		maxConex = config_get_int_value(config, "MAX_CONEX");
 	}else {
-		puts("Error al crear configuracion");
+		log_error(logger, "Error al cargar configuraciones");
 	}
-
+	estado = CORRUPTO;
+	listaCpu = list_create();
 
 	puts("Variables inicializadas...");
 }
@@ -63,10 +66,62 @@ void finalizarVariables(){
 
 }
 
-void* esperarMensajesDAM(void* socket){
-	int socket_dam = (int) socket;
-	printf("%d", socket_dam);
+void* conectarComponentes(){
+	// declaro variables
+	fd_set descriptoresLectura;
+	struct timeval timeout;
+	int numeroClientes = 0;
+	int nextCpuId = 1;
+	int socketsCpu[maxConex];
 
+	while(done == 0){
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+
+		// inicio descriptoresLectura
+		FD_ZERO(&descriptoresLectura);
+		// se añade para select() el socket servidor
+		FD_SET(socketEscucha, &descriptoresLectura);
+		//añado los CPU ya conectados
+		for(int i = 0; i< numeroClientes; i++){
+			FD_SET(socketsCpu[i], &descriptoresLectura);
+		}
+		// escucho a nuevas conexiones
+		select(100, &descriptoresLectura, NULL,NULL,&timeout);
+
+		// se comprueba si algun cliente nuevo desea conectarse
+		if(FD_ISSET(socketEscucha, &descriptoresLectura)){
+			socketsCpu[numeroClientes] = servidorConectarComponente(socketEscucha, "S-AFA", "CPU");
+			numeroClientes++;
+
+			if(numeroClientes > maxConex){
+				// debo enviar mensaje para que finalice el CPU
+
+				close(socketsCpu[numeroClientes -1]);
+				numeroClientes --;
+
+			}else {
+				// debo enviar el id al CPU
+
+				CPU *cpu = (CPU*) malloc(sizeof(CPU));
+				cpu->id = nextCpuId;
+				cpu->socket = socketsCpu[numeroClientes -1];
+				list_add(listaCpu, cpu);
+				nextCpuId ++;
+				printf("Se conecto CPU con id: %d \n", cpu->id);
+				free(cpu);
+			}
+		}
+
+	}
+	while(numeroClientes > 0){
+		printf("El Cpu %d fue finalizado por comando exit", list_get(listaCpu, numeroClientes - 1));
+		close(socketsCpu[numeroClientes -1]);
+		numeroClientes--;
+	}
+	close(socketEscucha);
+	free(socketsCpu);
+	FD_ZERO(&descriptoresLectura);
 	return NULL;
 }
 
