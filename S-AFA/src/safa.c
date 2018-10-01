@@ -115,9 +115,11 @@ void* conectarComponentes(){
 
 	}
 	while(numeroClientes > 0){
-		printf("El Cpu %d fue finalizado por comando exit", list_get(listaCpu, numeroClientes - 1));
+		CPU cpu = (CPU) list_get(listaCpu, numeroClientes -1);
+		printf("El Cpu %d fue finalizado por comando exit", (int)cpu.id);
 		close(socketsCpu[numeroClientes -1]);
 		numeroClientes--;
+		free(cpu);
 	}
 	close(socketEscucha);
 	free(socketsCpu);
