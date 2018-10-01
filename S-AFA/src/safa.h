@@ -42,6 +42,14 @@ typedef struct CPU {
 
 } CPU;
 
+typedef struct DTB {
+	int idGdt;
+	char* pathScript;
+	int programCounter;
+	int flagInicio;
+	char* archivosAbiertos;
+} DTB;
+
 int cmdHola(),cmdSalir(),cmdHelp();
 
 t_config* config;
@@ -54,7 +62,9 @@ int maxConex;
 t_list *listaCpu;
 t_list *colaNew;
 t_list *colaReady;
-pthread_mutex_t mutexListaCpu;
+t_list *colaEjecucion;
+t_list *colaBloqueados;
+t_list *colaExit;
 
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
