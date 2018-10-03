@@ -36,11 +36,10 @@ typedef struct COMANDO {
 
 
 // falta completar con datos del CPU
-typedef struct CPU {
+typedef struct CPU_struct {
 	int id;
 	int socket;
-
-} CPU;
+} CPU_struct;
 
 typedef struct DTB {
 	int idGdt;
