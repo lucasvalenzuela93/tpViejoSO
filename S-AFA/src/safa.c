@@ -33,7 +33,9 @@ int main(void) {
 		puts("Error al joinear hilo de conexiones...");
 		return 2;
 	}
+	finalizarVariables();
 	puts("Finalizo S-AFA correctamente...");
+
 	return EXIT_SUCCESS;
 }
 
@@ -51,17 +53,24 @@ void inicializarVariables(){
 	}
 	estado = CORRUPTO;
 	listaCpu = list_create();
+	colaNew = list_create();
+	colaReady = list_create();
+	colaEjecucion = list_create();
+	colaBloqueados = list_create();
+	colaExit = list_create();
 
 	puts("Variables inicializadas...");
 }
 
 void finalizarVariables(){
 	close(socket_dam);
-	close(socketEscucha);
-	free(logger);
-	free(IP);
-	free(puertoEscucha);
 	config_destroy(config);
+	list_destroy_and_destroy_elements(colaNew, free);
+	list_destroy_and_destroy_elements(colaReady, free);
+	list_destroy_and_destroy_elements(colaEjecucion, free);
+	list_destroy_and_destroy_elements(colaBloqueados, free);
+	list_destroy_and_destroy_elements(colaExit, free);
+	list_destroy_and_destroy_elements(listaCpu, free);
 
 }
 
@@ -100,7 +109,8 @@ void* conectarComponentes(){
 				numeroClientes --;
 
 			}else {
-				// debo enviar el id al CPU_struct
+				// debo enviar el id al CPU
+				enviarHeader(socketsCpu[numeroClientes -1],ID, nextCpuId);
 
 				CPU_struct *CPU = malloc(sizeof(CPU_struct));
 				CPU->id = nextCpuId;
@@ -108,7 +118,6 @@ void* conectarComponentes(){
 				list_add(listaCpu, CPU);
 				nextCpuId ++;
 				printf("Se conecto CPU con id: %d \n", CPU->id);
-				free(CPU);
 			}
 		}
 
@@ -203,8 +212,13 @@ int verificarParametros(char *linea, int posicion) {
 			free(parametros);
 		}
 	} else {
-		printf("%s: La cantidad de parametros ingresados es incorrecta.\n",
+		if(comandos[posicion].cmd == "status" && comandos[posicion].parametros == 0){
+			verificarParametros(linea, posicion +1);
+		}else {
+			printf("%s: La cantidad de parametros ingresados es incorrecta.\n",
 				comandos[posicion].cmd);
+		}
+
 	}
 	return 0;
 }
@@ -268,6 +282,80 @@ int cmdHelp() {
 			printf("%s\t\t\t%s\n", comandos[i].cmd, comandos[i].info);
 	}
 	return 0;
+}
+
+int cmdEjecutar(char* path){
+	// FUCNIONS DE CONSOLA QUE EJECUTA UN SCRIPT
+	DTB *dtb = (DTB*) malloc(sizeof(DTB));
+
+	dtb->idGdt = idGdt;
+	dtb->pathScript = path;
+	dtb->flagInicio = 0;
+	dtb->programCounter = 0;
+
+	list_add(colaNew,(void*) dtb);
+	log_info(logger, "Se ha añadido un el G.DT %d a la cola de NEW", idGdt);
+	idGdt ++;
+	return 0;
+
+}
+int cmdStatus(){
+	// DEBO MOSTRAR TODAS LAS COLAS
+	puts("Cola NEW:");
+	if(list_size(colaNew) == 0){
+		puts("Vacia...");
+	}else {
+		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		list_iterate(colaNew, imprimirCola);
+		puts("-------------------------------------");
+	}
+
+	puts("Cola READY");
+	if(list_size(colaReady) == 0){
+		puts("Vacia...");
+	}else {
+		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		list_iterate(colaReady, imprimirCola);
+		puts("-------------------------------------");
+	}
+	puts("Cola Ejecucion");
+	if(list_size(colaEjecucion) == 0){
+		puts("Vacia...");
+	}else {
+		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		list_iterate(colaEjecucion, imprimirCola);
+		puts("-------------------------------------");
+	}
+	puts("Cola Bloqueados");
+	if(list_size(colaBloqueados) == 0){
+		puts("Vacia...");
+	}else {
+		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		list_iterate(colaBloqueados, imprimirCola);
+		puts("-------------------------------------");
+	}
+	puts("Cola Exit");
+	if(list_size(colaExit) == 0){
+		puts("Vacia...");
+	}else {
+		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		list_iterate(colaExit, imprimirCola);
+		puts("-------------------------------------");
+	}
+
+
+	return 0;
+
+}
+
+int cmdStatusDTB(char* id){
+	// DEBO MOSTRAR LOS DATOS DEL DTB
+	printf("Debo mostrar los datos del DTB con id: %s\n", id);
+}
+
+void imprimirCola(void* elem){
+	DTB* elemento = (DTB*) elem;
+	printf("%i\t%s\t\t\t%i\t%i\n", elemento->idGdt, elemento->pathScript, elemento->programCounter, elemento->flagInicio);
 }
 
 
