@@ -21,18 +21,54 @@ int main(void) {
 
 	socketFunesMemory = clienteConectarComponente("DAM", "FUNES_MEMORY", puertoFunesMemory,ipFunesMemory);
 
-	// DEBE PRIMERO CONECTARSE FUNES MEMORY
-	// ANTES DE ESCUCHAR CONEXIONES DEL CPU
+	esperarConexiones();
 
-	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
-	socketCpu = servidorConectarComponente(socketEscucha, "DAM", "CPU");
 
 
 	finalizarVariables();
 	puts("Finalizo DAM...");
 	return EXIT_SUCCESS;
 }
+
+void esperarConexiones(){
+	fd_set descLectura;
+	struct timeval timeout;
+	int numeroClientes = 0;
+	int socketCpu[100];
+	int nextCpuId = 1;
+	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
+
+	while(true){
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+
+		// inicio descriptoresLectura
+		FD_ZERO(&descLectura);
+		// se añade para select() el socket servidor
+		FD_SET(socketEscucha, &descLectura);
+		//añado los CPU ya conectados
+		for(int i = 0; i< numeroClientes; i++){
+			FD_SET(socketCpu[i], &descLectura);
+		}
+		// escucho a nuevas conexiones
+		select(100, &descLectura, NULL,NULL,&timeout);
+
+		if(FD_ISSET(socketEscucha, &descLectura)){
+			socketCpu[numeroClientes] = servidorConectarComponente(socketEscucha, "DAM", "CPU");
+			numeroClientes++;
+			CPU_struct *cpu = malloc(sizeof(CPU_struct));
+			cpu->id = nextCpuId;
+			cpu->socket = socketCpu[numeroClientes - 1];
+			nextCpuId ++;
+			printf("Se conecto CPU con id: %d \n", cpu->id);
+			free(cpu);
+
+
+		}
+	}
+}
+
 void iniciarVariables(){
 	config = config_create("../config/config.txt");
 	if(config == NULL){
@@ -50,6 +86,7 @@ void iniciarVariables(){
 	puertoFileSystem = config_get_int_value(config, "PUERTO_FILE_SYSTEM");
 	puertoFunesMemory = config_get_int_value(config, "PUERTO_FUNES_MEMORY");
 
+	listaCpu = list_create();
 	puts("Variables iniciadas...");
 }
 

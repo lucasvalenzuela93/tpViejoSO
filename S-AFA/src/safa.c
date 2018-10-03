@@ -56,7 +56,6 @@ void inicializarVariables(){
 }
 
 void finalizarVariables(){
-	close(socket_cpu);
 	close(socket_dam);
 	close(socketEscucha);
 	free(logger);
@@ -82,7 +81,7 @@ void* conectarComponentes(){
 		FD_ZERO(&descriptoresLectura);
 		// se añade para select() el socket servidor
 		FD_SET(socketEscucha, &descriptoresLectura);
-		//añado los CPU ya conectados
+		//añado los CPU_struct ya conectados
 		for(int i = 0; i< numeroClientes; i++){
 			FD_SET(socketsCpu[i], &descriptoresLectura);
 		}
@@ -95,31 +94,31 @@ void* conectarComponentes(){
 			numeroClientes++;
 
 			if(numeroClientes > maxConex){
-				// debo enviar mensaje para que finalice el CPU
-
+				// debo enviar mensaje para que finalice el CPU_struct
+				enviarHeader(socketsCpu[numeroClientes -1], "", CPU_MAXIMAS_CONEXIONES_ALCANZADAS);
 				close(socketsCpu[numeroClientes -1]);
 				numeroClientes --;
 
 			}else {
-				// debo enviar el id al CPU
+				// debo enviar el id al CPU_struct
 
-				CPU *cpu = (CPU*) malloc(sizeof(CPU));
-				cpu->id = nextCpuId;
-				cpu->socket = socketsCpu[numeroClientes -1];
-				list_add(listaCpu, cpu);
+				CPU_struct *CPU = malloc(sizeof(CPU_struct));
+				CPU->id = nextCpuId;
+				CPU->socket = socketsCpu[numeroClientes -1];
+				list_add(listaCpu, CPU);
 				nextCpuId ++;
-				printf("Se conecto CPU con id: %d \n", cpu->id);
-				free(cpu);
+				printf("Se conecto CPU con id: %d \n", CPU->id);
+				free(CPU);
 			}
 		}
 
 	}
 	while(numeroClientes > 0){
-		CPU cpu = (CPU) list_get(listaCpu, numeroClientes -1);
-		printf("El Cpu %d fue finalizado por comando exit", (int)cpu.id);
+		CPU_struct *CPU = (CPU_struct*)list_get(listaCpu, numeroClientes -1);
+		printf("El CPU %d fue finalizado por comando exit",CPU->id);
 		close(socketsCpu[numeroClientes -1]);
 		numeroClientes--;
-		free(cpu);
+		free(CPU);
 	}
 	close(socketEscucha);
 	free(socketsCpu);

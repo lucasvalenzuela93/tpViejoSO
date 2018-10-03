@@ -15,6 +15,11 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 
+typedef struct CPU_struct {
+	int id;
+	int socket;
+} CPU_struct;
+
 t_config *config;
 int puertoEscucha, puertoSafa, puertoFileSystem, puertoFunesMemory;
 char* ipEscucha;
@@ -22,8 +27,10 @@ char* ipSafa;
 char* ipFileSystem;
 char* ipFunesMemory;
 int socketSafa, socketEscucha, socketCpu, socketFileSystem, socketFunesMemory;
+t_list *listaCpu;
 
 void iniciarVariables();
 void finalizarVariables();
+void esperarConexiones();
 
 #endif /* SRC_DAM_H_ */
