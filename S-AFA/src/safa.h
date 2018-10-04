@@ -50,7 +50,7 @@ typedef struct DTB {
 	t_list *archivosAbiertos;
 } DTB;
 
-int cmdHola(),cmdSalir(),cmdHelp(), cmdEjecutar(),cmdStatus(),cmdStatusDTB();
+int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB();
 
 t_config* config;
 t_log *logger;
@@ -70,7 +70,6 @@ t_list *colaExit;
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
 		{"salir", cmdSalir, "Termina el proceso", 0},
-		{"ejecutar", cmdEjecutar, "Ejecuta el script pasado por parametro", 1},
 		{"status", cmdStatus, "Muestra los valores de las colas por pantalla", 0},
 		{"status", cmdStatusDTB, "Muestra los valores de las colas por pantalla", 1},
 		{"help", cmdHelp, "Muestra los posibles comandos de consola", 0}

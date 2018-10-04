@@ -284,21 +284,7 @@ int cmdHelp() {
 	return 0;
 }
 
-int cmdEjecutar(char* path){
-	// FUCNIONS DE CONSOLA QUE EJECUTA UN SCRIPT
-	DTB *dtb = (DTB*) malloc(sizeof(DTB));
 
-	dtb->idGdt = idGdt;
-	dtb->pathScript = path;
-	dtb->flagInicio = 0;
-	dtb->programCounter = 0;
-
-	list_add(colaNew,(void*) dtb);
-	log_info(logger, "Se ha añadido un el G.DT %d a la cola de NEW", idGdt);
-	idGdt ++;
-	return 0;
-
-}
 int cmdStatus(){
 	// DEBO MOSTRAR TODAS LAS COLAS
 	puts("Cola NEW:");
