@@ -10,10 +10,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <sockets1/sockets.h>
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -46,10 +48,10 @@ typedef struct DTB {
 	char* pathScript;
 	int programCounter;
 	int flagInicio;
-	char* archivosAbiertos;
+	t_list *archivosAbiertos;
 } DTB;
 
-int cmdHola(),cmdSalir(),cmdHelp();
+int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB();
 
 t_config* config;
 t_log *logger;
@@ -58,8 +60,9 @@ int puertoEscucha;
 char* IP;
 char* estado;
 int maxConex;
+int idGdt = 1;
 t_list *listaCpu;
-t_list *colaNew;
+t_queue *colaNew;
 t_list *colaReady;
 t_list *colaEjecucion;
 t_list *colaBloqueados;
@@ -68,6 +71,8 @@ t_list *colaExit;
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
 		{"salir", cmdSalir, "Termina el proceso", 0},
+		{"status", cmdStatus, "Muestra los valores de las colas por pantalla", 0},
+		{"status", cmdStatusDTB, "Muestra los valores de las colas por pantalla", 1},
 		{"help", cmdHelp, "Muestra los posibles comandos de consola", 0}
 };
 
@@ -77,6 +82,7 @@ void inicializarVariables();
 void* conectarComponentes();
 
 void finalizarVariables();
+void imprimirCola();
 // ------------------FUNCIONES CONSOLA--------------------
 
 
