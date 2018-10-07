@@ -349,7 +349,7 @@ int cmdStatusDTB(char* id){
 		printf(
 			"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
 			dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
-		)
+		);
 	}
 }
 
@@ -358,6 +358,21 @@ void imprimirCola(void* elem){
 	printf("%i\t%s\t\t\t%i\t%i\n", elemento->idGdt, elemento->pathScript, elemento->programCounter, elemento->flagInicio);
 }
 
+int cmdEjecutar(char* path){
+	// FUCNIONS DE CONSOLA QUE EJECUTA UN SCRIPT
+	DTB *dtb = (DTB*) malloc(sizeof(DTB));
+
+	dtb->idGdt = idGdt;
+	dtb->pathScript = path;
+	dtb->flagInicio = 0;
+	dtb->programCounter = 0;
+
+	list_add(colaNew,(void*) dtb);
+	log_info(logger, "Se ha añadido un el G.DT %d a la cola de NEW", idGdt);
+	idGdt ++;
+	return 0;
+
+}
 
 
 
