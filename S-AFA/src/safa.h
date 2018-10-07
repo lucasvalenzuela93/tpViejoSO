@@ -62,7 +62,7 @@ char* estado;
 int maxConex;
 int idGdt = 1;
 t_list *listaCpu;
-t_queue *colaNew;
+t_list *colaNew;
 t_list *colaReady;
 t_list *colaEjecucion;
 t_list *colaBloqueados;
