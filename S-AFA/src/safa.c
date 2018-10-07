@@ -53,7 +53,7 @@ void inicializarVariables(){
 	}
 	estado = CORRUPTO;
 	listaCpu = list_create();
-	colaNew = queue_create();
+	colaNew = list_create();
 	colaReady = list_create();
 	colaEjecucion = list_create();
 	colaBloqueados = list_create();
@@ -65,7 +65,7 @@ void inicializarVariables(){
 void finalizarVariables(){
 	close(socket_dam);
 	config_destroy(config);
-	queue_destroy_and_destroy_elements(colaNew, free);
+	list_destroy_and_destroy_elements(colaNew, free);
 	list_destroy_and_destroy_elements(colaReady, free);
 	list_destroy_and_destroy_elements(colaEjecucion, free);
 	list_destroy_and_destroy_elements(colaBloqueados, free);
