@@ -165,6 +165,16 @@
 	void *list_find(t_list *, bool(*closure)(void*));
 
 	/**
+	 * @NAME: list_find_with_param
+	 * @DESC: busca en la lista por un parametro
+	 */
+
+	void* list_find_with_param(t_list*, void*, int(*condition)(void*, void*));
+
+	t_link_element* list_find_element_with_param(t_list*, void*, int(*condition)(void*, void*), int*);
+
+
+	/**
 	* @NAME: list_size
 	* @DESC: Retorna el tamaño de la lista
 	*/

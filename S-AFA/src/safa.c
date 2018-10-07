@@ -53,7 +53,7 @@ void inicializarVariables(){
 	}
 	estado = CORRUPTO;
 	listaCpu = list_create();
-	colaNew = list_create();
+	colaNew = queue_create();
 	colaReady = list_create();
 	colaEjecucion = list_create();
 	colaBloqueados = list_create();
@@ -65,7 +65,7 @@ void inicializarVariables(){
 void finalizarVariables(){
 	close(socket_dam);
 	config_destroy(config);
-	list_destroy_and_destroy_elements(colaNew, free);
+	queue_destroy_and_destroy_elements(colaNew, free);
 	list_destroy_and_destroy_elements(colaReady, free);
 	list_destroy_and_destroy_elements(colaEjecucion, free);
 	list_destroy_and_destroy_elements(colaBloqueados, free);
@@ -106,6 +106,7 @@ void* conectarComponentes(){
 				// debo enviar mensaje para que finalice el CPU_struct
 				enviarHeader(socketsCpu[numeroClientes -1], "", CPU_MAXIMAS_CONEXIONES_ALCANZADAS);
 				close(socketsCpu[numeroClientes -1]);
+				puts("Maxiamas conexiones alcanzadas...");
 				numeroClientes --;
 
 			}else {
@@ -334,14 +335,26 @@ int cmdStatus(){
 
 }
 
+int buscarDTBporId(void* dtbVoid,void* dtbId){
+	DTB* dtb = (DTB*) dtbVoid;
+	int id = atoi((char*) dtbId);
+	return dtb->idGdt == id;
+}
+
 int cmdStatusDTB(char* id){
 	// DEBO MOSTRAR LOS DATOS DEL DTB
 	printf("Debo mostrar los datos del DTB con id: %s\n", id);
+	DTB *dtb;
+	if(dtb = (DTB*)list_find_with_param(colaNew,(void*) id, buscarDTBporId)){
+		puts("Encontrado");
+	}
 }
 
 void imprimirCola(void* elem){
 	DTB* elemento = (DTB*) elem;
 	printf("%i\t%s\t\t\t%i\t%i\n", elemento->idGdt, elemento->pathScript, elemento->programCounter, elemento->flagInicio);
 }
+
+
 
 

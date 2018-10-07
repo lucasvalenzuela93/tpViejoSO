@@ -15,6 +15,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -61,7 +62,7 @@ char* estado;
 int maxConex;
 int idGdt = 1;
 t_list *listaCpu;
-t_list *colaNew;
+t_queue *colaNew;
 t_list *colaReady;
 t_list *colaEjecucion;
 t_list *colaBloqueados;
