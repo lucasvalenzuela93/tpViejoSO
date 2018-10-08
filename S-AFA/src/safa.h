@@ -51,7 +51,7 @@ typedef struct DTB {
 	t_list *archivosAbiertos;
 } DTB;
 
-int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB();
+int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB(), cmdEjecutar();
 
 t_config* config;
 t_log *logger;
@@ -60,6 +60,7 @@ int puertoEscucha;
 char* IP;
 char* estado;
 int maxConex;
+int multiprogramacion;
 int idGdt = 1;
 t_list *listaCpu;
 t_list *colaNew;
@@ -71,6 +72,7 @@ t_list *colaExit;
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
 		{"salir", cmdSalir, "Termina el proceso", 0},
+		{"ejecutar", cmdEjecutar, "Ejecuta el script pasado por parametro", 1},
 		{"status", cmdStatus, "Muestra los valores de las colas por pantalla", 0},
 		{"status", cmdStatusDTB, "Muestra los valores de las colas por pantalla", 1},
 		{"help", cmdHelp, "Muestra los posibles comandos de consola", 0}
@@ -80,7 +82,7 @@ int socketEscucha,socket_cpu, socket_dam;
 
 void inicializarVariables();
 void* conectarComponentes();
-
+void* manejarColas();
 void finalizarVariables();
 void imprimirCola();
 // ------------------FUNCIONES CONSOLA--------------------
