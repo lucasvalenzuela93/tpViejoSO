@@ -368,25 +368,24 @@ int buscarDTBporId(void* dtbVoid,void* dtbId){
 
 int cmdStatusDTB(char* id){
 	// DEBO MOSTRAR LOS DATOS DEL DTB
-	printf("Debo mostrar los datos del DTB con id: %s\n", id);
 	DTB *dtb;
 	if(dtb = (DTB*)list_find_with_param(colaNew,(void*) id, buscarDTBporId)){
 		printf(
-			"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+			"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i\n",
 			dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio);
 	}else if(dtb = (DTB*)list_find_with_param(colaReady,(void*) id, buscarDTBporId)){
 			printf(
-				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i\n",
 				dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
 			);
 	}else if(dtb = (DTB*)list_find_with_param(colaEjecucion,(void*) id, buscarDTBporId)){
 			printf(
-				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i\n",
 				dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
 			);
 	}else if(dtb = (DTB*)list_find_with_param(colaBloqueados,(void*) id, buscarDTBporId)){
 			printf(
-				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i\n",
 				dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
 			);
 	} else {
