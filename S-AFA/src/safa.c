@@ -373,9 +373,26 @@ int cmdStatusDTB(char* id){
 	if(dtb = (DTB*)list_find_with_param(colaNew,(void*) id, buscarDTBporId)){
 		printf(
 			"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
-			dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
-		);
+			dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio);
+	}else if(dtb = (DTB*)list_find_with_param(colaReady,(void*) id, buscarDTBporId)){
+			printf(
+				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+				dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
+			);
+	}else if(dtb = (DTB*)list_find_with_param(colaEjecucion,(void*) id, buscarDTBporId)){
+			printf(
+				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+				dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
+			);
+	}else if(dtb = (DTB*)list_find_with_param(colaBloqueados,(void*) id, buscarDTBporId)){
+			printf(
+				"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+				dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
+			);
+	} else {
+		puts("El id ingresado no existe...");
 	}
+
 }
 
 void imprimirCola(void* elem){
