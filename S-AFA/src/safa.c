@@ -27,6 +27,11 @@ int main(void) {
 		}
 		continue;
 	}
+	pthread_t *hiloMensajes;
+	if(pthread_create(&hiloMensajes,NULL,manejarMensajes , NULL)){
+		log_error(logger, "Error al crear hilo de mensajes");
+		return 2;
+	}
 	pthread_t hiloColas;
 	if(pthread_create(&hiloColas, NULL, manejarColas,NULL)){
 		log_error(logger, "Error al crear el hilo de colas");
@@ -38,6 +43,10 @@ int main(void) {
 		puts("Error al joinear hilo de conexiones...");
 		return 2;
 	}
+	if(pthread_join(hiloMensajes, NULL)){
+			log_error(logger, "Error al joinear el hilo de mensajes");
+			return 2;
+		}
 	if(pthread_join(hiloColas, NULL)){
 		log_error(logger, "Error al joinear el hilo de colas");
 		return 2;
@@ -82,6 +91,42 @@ void finalizarVariables(){
 	list_destroy_and_destroy_elements(colaExit, free);
 	list_destroy_and_destroy_elements(listaCpu, free);
 
+}
+
+void* manejarMensajes(){
+	ContentHeader* header;
+	char* mensaje;
+	DTB* dtb;
+	while(done == 0){
+		header = recibirHeader(socketEscucha);
+		// en el mensaje me mandan el id del Dgt para q lo busque en la lista.
+		recibirMensaje(socketEscucha, header->largo, &mensaje);
+		switch(header->id){
+			case SAFA_BLOQUEAR_CPU:{
+				// debo pasar el cpu de la lista de ejecucion a la lista de bloqueado
+
+				if(dtb = (DTB*)list_remove_by_condition_with_param(colaNew, (void*) mensaje, buscarDTBporId)){
+					list_add(colaBloqueados, (void*) dtb);
+				}
+				break;
+			}
+			case SAFA_DESBLOQUEAR_CPU:{
+				// debo pasar el cpu de la lista de bloqueados a la lista de ready
+				if(dtb = (DTB*)list_remove_by_condition_with_param(colaBloqueados, (void*) mensaje, buscarDTBporId)){
+					list_add(colaReady, (void*) dtb);
+				}
+				break;
+			}
+			case SAFA_MOVER_CPU_EXIT:{
+				// debo mover el cpu que fallo a la cola de exit
+				// TODO ver de que cola tengo que sacar el GDT cuando lo muevo a exit
+				//	si de ready o de Ejecucion
+				if(dtb = (DTB*)list_remove_by_condition_with_param(colaNew, (void*) mensaje, buscarDTBporId)){
+					list_add(colaExit, (void*) dtb);
+				}
+			}
+		}
+	}
 }
 
 void* manejarColas(){
