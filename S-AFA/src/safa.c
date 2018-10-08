@@ -85,8 +85,9 @@ void finalizarVariables(){
 }
 
 void* manejarColas(){
-	int totalEnMemoria = 0;
+	int totalEnMemoria;
 	while(done == 0){
+		totalEnMemoria = 0;
 		totalEnMemoria += list_size(colaReady);
 		totalEnMemoria += list_size(colaEjecucion);
 		totalEnMemoria += list_size(colaBloqueados);
