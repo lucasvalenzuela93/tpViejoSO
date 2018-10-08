@@ -85,8 +85,12 @@ void finalizarVariables(){
 }
 
 void* manejarColas(){
+	int totalEnMemoria = 0;
 	while(done == 0){
-			if(list_size(colaReady) < multiprogramacion && list_size(colaNew) > 0){
+		totalEnMemoria += list_size(colaReady);
+		totalEnMemoria += list_size(colaEjecucion);
+		totalEnMemoria += list_size(colaBloqueados);
+			if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
 					// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
 					// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
 				DTB* aux = (DTB*) list_remove(colaNew, 0);
