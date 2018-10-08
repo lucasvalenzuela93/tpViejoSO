@@ -85,8 +85,9 @@ void finalizarVariables(){
 }
 
 void* manejarColas(){
-	int totalEnMemoria = 0;
+	int totalEnMemoria;
 	while(done == 0){
+		totalEnMemoria = 0;
 		totalEnMemoria += list_size(colaReady);
 		totalEnMemoria += list_size(colaEjecucion);
 		totalEnMemoria += list_size(colaBloqueados);
@@ -368,11 +369,10 @@ int buscarDTBporId(void* dtbVoid,void* dtbId){
 
 int cmdStatusDTB(char* id){
 	// DEBO MOSTRAR LOS DATOS DEL DTB
-	printf("Debo mostrar los datos del DTB con id: %s\n", id);
 	DTB *dtb;
 	if(dtb = (DTB*)list_find_with_param(colaNew,(void*) id, buscarDTBporId)){
 		printf(
-			"ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
+			" ID: %i \n Path: %s \n Program Counter: %i \n Flag inicializacion: %i",
 			dtb->idGdt, dtb->pathScript, dtb->programCounter, dtb->flagInicio
 		);
 	}
