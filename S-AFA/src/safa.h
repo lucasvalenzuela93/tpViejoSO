@@ -60,6 +60,7 @@ int puertoEscucha;
 char* IP;
 char* estado;
 int maxConex;
+int multiprogramacion;
 int idGdt = 1;
 t_list *listaCpu;
 t_list *colaNew;
@@ -81,7 +82,7 @@ int socketEscucha,socket_cpu, socket_dam;
 
 void inicializarVariables();
 void* conectarComponentes();
-
+void* manejarColas();
 void finalizarVariables();
 void imprimirCola();
 // ------------------FUNCIONES CONSOLA--------------------

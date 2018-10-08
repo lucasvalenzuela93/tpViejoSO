@@ -27,10 +27,19 @@ int main(void) {
 		}
 		continue;
 	}
+	pthread_t hiloColas;
+	if(pthread_create(&hiloColas, NULL, manejarColas,NULL)){
+		log_error(logger, "Error al crear el hilo de colas");
+		return 2;
+	}
 	puts("S-AFA esta operativo");
 	iniciarConsola();
 	if(pthread_join(hiloConexiones, NULL)){
 		puts("Error al joinear hilo de conexiones...");
+		return 2;
+	}
+	if(pthread_join(hiloColas, NULL)){
+		log_error(logger, "Error al joinear el hilo de colas");
 		return 2;
 	}
 	finalizarVariables();
@@ -48,6 +57,7 @@ void inicializarVariables(){
 		IP = config_get_string_value(config, "IP");
 		puertoEscucha = config_get_int_value(config,"PUERTO");
 		maxConex = config_get_int_value(config, "MAX_CONEX");
+		multiprogramacion = config_get_int_value(config, "MULTIPROGRAMACION");
 	}else {
 		log_error(logger, "Error al cargar configuraciones");
 	}
@@ -72,6 +82,21 @@ void finalizarVariables(){
 	list_destroy_and_destroy_elements(colaExit, free);
 	list_destroy_and_destroy_elements(listaCpu, free);
 
+}
+
+void* manejarColas(){
+	int totalEnMemoria = 0;
+	while(done == 0){
+		totalEnMemoria += list_size(colaReady);
+		totalEnMemoria += list_size(colaEjecucion);
+		totalEnMemoria += list_size(colaBloqueados);
+			if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
+					// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
+					// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
+				DTB* aux = (DTB*) list_remove(colaNew, 0);
+				list_add(colaReady, (void*) aux);
+			}
+		}
 }
 
 void* conectarComponentes(){
