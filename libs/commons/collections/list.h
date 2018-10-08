@@ -173,6 +173,12 @@
 
 	t_link_element* list_find_element_with_param(t_list*, void*, int(*condition)(void*, void*), int*);
 
+	/**
+	 * @NAME: list_remove_by_condition_with_param
+	 * @DESC: remueve el primer elemento que haga q la condicion sea != 0
+	 */
+
+	void* list_remove_by_condition_with_param(t_list*, void*, int(*condition)(void*, void*));
 
 	/**
 	* @NAME: list_size

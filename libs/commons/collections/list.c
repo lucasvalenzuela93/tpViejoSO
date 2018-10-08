@@ -115,6 +115,17 @@ t_link_element* list_find_element_with_param(t_list *self, void* param, int(*con
 	return element;
 }
 
+void* list_remove_by_condition_with_param(t_list *self, void* param, int(*condition)(void*, void*)) {
+	int index = 0;
+	t_link_element* element = list_find_element_with_param(self, param, condition, &index);
+
+	if (element != NULL) {
+		return list_remove(self, index);
+	}
+
+	return NULL;
+}
+
 void* list_find_with_param(t_list *self, void* param, int(*condition)(void*, void*)) {
 	t_link_element *element = list_find_element_with_param(self, param, condition, NULL);
 	return element != NULL ? element->data : NULL;

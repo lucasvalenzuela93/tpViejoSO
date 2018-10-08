@@ -48,10 +48,11 @@ typedef struct DTB {
 	char* pathScript;
 	int programCounter;
 	int flagInicio;
+	int socket;
 	t_list *archivosAbiertos;
 } DTB;
 
-int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB(), cmdEjecutar();
+int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB(), cmdEjecutar(), cmdFinalizar();
 
 t_config* config;
 t_log *logger;
@@ -75,6 +76,7 @@ COMANDO comandos[] = {
 		{"ejecutar", cmdEjecutar, "Ejecuta el script pasado por parametro", 1},
 		{"status", cmdStatus, "Muestra los valores de las colas por pantalla", 0},
 		{"status", cmdStatusDTB, "Muestra los valores de las colas por pantalla", 1},
+		{"finalizar", cmdFinalizar, "Finaliza el G.DT con el id correspondiente", 1},
 		{"help", cmdHelp, "Muestra los posibles comandos de consola", 0}
 };
 
