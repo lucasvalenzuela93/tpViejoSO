@@ -311,7 +311,6 @@ int cmdHelp() {
 	return 0;
 }
 
-
 int cmdStatus(){
 	// DEBO MOSTRAR TODAS LAS COLAS
 	puts("Cola NEW:");
@@ -365,6 +364,23 @@ int buscarDTBporId(void* dtbVoid,void* dtbId){
 	DTB* dtb = (DTB*) dtbVoid;
 	int id = atoi((char*) dtbId);
 	return dtb->idGdt == id;
+}
+
+int cmdFinalizar(char* id){
+	DTB* dtb, aux;
+	if(dtb = (DTB*)list_find_with_param(colaEjecucion,(void*) id, buscarDTBporId)){
+		// DEBO ESPERAR A QUE TERMINE DE EJECUTAR PARA PASARLO A LA COLA DE EXIT
+
+	}else if(dtb = (DTB*) list_remove_by_condition_with_param(colaNew, (void*) id, buscarDTBporId)){
+		list_add(colaExit, (void*) dtb);
+	}
+	else if(dtb = (DTB*) list_remove_by_condition_with_param(colaReady, (void*) id, buscarDTBporId)){
+		list_add(colaExit, (void*) dtb);
+	}
+	else if(dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) id, buscarDTBporId)){
+		list_add(colaExit, (void*) dtb);
+	}
+
 }
 
 int cmdStatusDTB(char* id){
