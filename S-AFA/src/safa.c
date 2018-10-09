@@ -11,6 +11,12 @@
 
 #include "safa.h"
 
+int buscarDTBporId(void* dtbVoid,void* dtbId){
+	DTB* dtb = (DTB*) dtbVoid;
+	int id = atoi((char*) dtbId);
+	return dtb->idGdt == id;
+}
+
 int main(void) {
 	inicializarVariables();
 
@@ -136,13 +142,13 @@ void* manejarColas(){
 		totalEnMemoria += list_size(colaReady);
 		totalEnMemoria += list_size(colaEjecucion);
 		totalEnMemoria += list_size(colaBloqueados);
-			if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
-					// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
-					// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
-				DTB* aux = (DTB*) list_remove(colaNew, 0);
-				list_add(colaReady, (void*) aux);
-			}
+		if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
+				// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
+				// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
+			DTB* aux = (DTB*) list_remove(colaNew, 0);
+			list_add(colaReady, (void*) aux);
 		}
+	}
 }
 
 void* conectarComponentes(){
@@ -405,11 +411,7 @@ int cmdStatus(){
 
 }
 
-int buscarDTBporId(void* dtbVoid,void* dtbId){
-	DTB* dtb = (DTB*) dtbVoid;
-	int id = atoi((char*) dtbId);
-	return dtb->idGdt == id;
-}
+
 
 int cmdFinalizar(char* id){
 	DTB* dtb, aux;

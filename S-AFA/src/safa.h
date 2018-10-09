@@ -88,7 +88,6 @@ void* manejarColas();
 void* manejarMensajes();
 void finalizarVariables();
 void imprimirCola();
-void* buscarDTBporId();
 // ------------------FUNCIONES CONSOLA--------------------
 
 
