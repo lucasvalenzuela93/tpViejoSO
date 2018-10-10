@@ -11,6 +11,12 @@
 
 #include "safa.h"
 
+int buscarDTBporId(void* dtbVoid,void* dtbId){
+	DTB* dtb = (DTB*) dtbVoid;
+	int id = atoi((char*) dtbId);
+	return dtb->idGdt == id;
+}
+
 int main(void) {
 	inicializarVariables();
 
@@ -27,6 +33,11 @@ int main(void) {
 		}
 		continue;
 	}
+	pthread_t *hiloMensajes;
+	if(pthread_create(&hiloMensajes,NULL,manejarMensajes , NULL)){
+		log_error(logger, "Error al crear hilo de mensajes");
+		return 2;
+	}
 	pthread_t hiloColas;
 	if(pthread_create(&hiloColas, NULL, manejarColas,NULL)){
 		log_error(logger, "Error al crear el hilo de colas");
@@ -38,6 +49,10 @@ int main(void) {
 		puts("Error al joinear hilo de conexiones...");
 		return 2;
 	}
+	if(pthread_join(hiloMensajes, NULL)){
+			log_error(logger, "Error al joinear el hilo de mensajes");
+			return 2;
+		}
 	if(pthread_join(hiloColas, NULL)){
 		log_error(logger, "Error al joinear el hilo de colas");
 		return 2;
@@ -81,7 +96,50 @@ void finalizarVariables(){
 	list_destroy_and_destroy_elements(colaBloqueados, free);
 	list_destroy_and_destroy_elements(colaExit, free);
 	list_destroy_and_destroy_elements(listaCpu, free);
+}
 
+void* manejarMensajes(){
+	ContentHeader* header;
+	char* id;
+	DTB* dtb;
+	while(done == 0){
+		header = recibirHeader(socketEscucha);
+		// en el mensaje me mandan el Dgt para q lo busque en la lista.
+
+		switch(header->id){
+			case SAFA_BLOQUEAR_CPU:{
+				// recibo el Dtb del cpu y lo agrego a la cola de bloqueados
+				// viene con el program counter actualizado
+				DTB* dtb = malloc(sizeof(DTB));
+				list_remove_by_condition_with_param(colaNew, (void*) dtb->idGdt, buscarDTBporId);
+				recibirMensaje(socketEscucha, header->largo, &dtb);
+				list_add(colaBloqueados, (void*) dtb);
+
+				break;
+			}
+			case SAFA_DESBLOQUEAR_CPU:{
+				recibirMensaje(socketEscucha, header->largo, &id);
+				// debo pasar el cpu de la lista de bloqueados a la lista de ready
+				if(dtb = (DTB*)list_remove_by_condition_with_param(colaBloqueados, (void*) id, buscarDTBporId)){
+					list_add(colaReady, (void*) dtb);
+				}
+				break;
+			}
+			case SAFA_MOVER_CPU_EXIT:{
+				recibirMensaje(socketEscucha, header->largo, &id);
+				// debo mover el cpu que fallo a la cola de exit
+				// TODO ver de que cola tengo que sacar el GDT cuando lo muevo a exit
+				//	si de ready o de Ejecucion
+				if(dtb = (DTB*)list_remove_by_condition_with_param(colaNew, (void*) id, buscarDTBporId)){
+					list_add(colaExit, (void*) dtb);
+					if(dtb->socket){
+						// si el dtb tiene un cpu asignado le aviso q no ejecute mas.
+						enviarHeader(dtb->socket,"",CPU_FRENAR_EJECUCION);
+					}
+				}
+			}
+		}
+	}
 }
 
 void* manejarColas(){
@@ -91,13 +149,13 @@ void* manejarColas(){
 		totalEnMemoria += list_size(colaReady);
 		totalEnMemoria += list_size(colaEjecucion);
 		totalEnMemoria += list_size(colaBloqueados);
-			if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
-					// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
-					// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
-				DTB* aux = (DTB*) list_remove(colaNew, 0);
-				list_add(colaReady, (void*) aux);
-			}
+		if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
+				// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
+				// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
+			DTB* aux = (DTB*) list_remove(colaNew, 0);
+			list_add(colaReady, (void*) aux);
 		}
+	}
 }
 
 void* conectarComponentes(){
@@ -142,6 +200,7 @@ void* conectarComponentes(){
 				CPU_struct *CPU = malloc(sizeof(CPU_struct));
 				CPU->id = nextCpuId;
 				CPU->socket = socketsCpu[numeroClientes -1];
+				CPU->asginado = 0;
 				list_add(listaCpu, CPU);
 				nextCpuId ++;
 				printf("Se conecto CPU con id: %d \n", CPU->id);
@@ -360,14 +419,10 @@ int cmdStatus(){
 
 }
 
-int buscarDTBporId(void* dtbVoid,void* dtbId){
-	DTB* dtb = (DTB*) dtbVoid;
-	int id = atoi((char*) dtbId);
-	return dtb->idGdt == id;
-}
+
 
 int cmdFinalizar(char* id){
-	DTB* dtb, aux;
+	DTB* dtb;
 	if(dtb = (DTB*)list_find_with_param(colaEjecucion,(void*) id, buscarDTBporId)){
 		// DEBO ESPERAR A QUE TERMINE DE EJECUTAR PARA PASARLO A LA COLA DE EXIT
 
@@ -419,7 +474,6 @@ void imprimirCola(void* elem){
 int cmdEjecutar(char* path){
 	// FUCNIONS DE CONSOLA QUE EJECUTA UN SCRIPT
 	DTB *dtb = (DTB*) malloc(sizeof(DTB));
-
 	dtb->idGdt = idGdt;
 	dtb->pathScript = path;
 	dtb->flagInicio = 0;
