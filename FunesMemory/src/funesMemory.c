@@ -21,6 +21,7 @@ int main(void) {
 
 	esperarConexiones();
 
+
 	finalizarVariables();
 	puts("Finalizo Funes Memory...");
 	return EXIT_SUCCESS;
