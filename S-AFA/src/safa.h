@@ -41,6 +41,7 @@ typedef struct COMANDO {
 typedef struct CPU_struct {
 	int id;
 	int socket;
+	int asginado;
 } CPU_struct;
 
 typedef struct DTB {
@@ -51,6 +52,7 @@ typedef struct DTB {
 	int socket;
 	t_list *archivosAbiertos;
 } __attribute__((packed)) DTB;
+
 
 int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB(), cmdEjecutar(), cmdFinalizar();
 
