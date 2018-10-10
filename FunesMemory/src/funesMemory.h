@@ -16,6 +16,11 @@
 const char* IP = "127.0.0.1";
 const int PUERTO_ESCUCHA = 8101;
 
+typedef struct CPU_struct {
+	int id;
+	int socket;
+} CPU_struct;
+
 t_config* config;
 char* ipEscucha;
 int puertoEscucha;
@@ -23,5 +28,6 @@ int socketEscucha, socketCpu, socketDam;
 
 void iniciarVariables();
 void finalizarVariables();
+void esperarConexiones();
 
 #endif /* SRC_FUNESMEMORY_H_ */
