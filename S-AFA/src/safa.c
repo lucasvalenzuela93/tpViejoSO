@@ -17,6 +17,18 @@ int buscarDTBporId(void* dtbVoid,void* dtbId){
 	return dtb->idGdt == id;
 }
 
+int filtrarCpu(void* cpuVoid,void* id){
+	CPU_struct* cpu = (CPU_struct*) cpuVoid;
+	int gdtId = (int) id;
+	return cpu->gdtAsignado == gdtId;
+}
+
+int buscarCpuAsignado(void* cpuVoid, void* idGdt){
+	CPU_struct* cpu = (CPU_struct*) cpuVoid;
+	int id = (int) idGdt;
+	return cpu->gdtAsignado = id;
+}
+
 int main(void) {
 	inicializarVariables();
 
@@ -33,32 +45,32 @@ int main(void) {
 		}
 		continue;
 	}
-	pthread_t *hiloMensajes;
-	if(pthread_create(&hiloMensajes,NULL,manejarMensajes , NULL)){
+	pthread_t hiloMensajes;
+	if(pthread_create(&hiloMensajes,NULL,&manejarMensajes , NULL)){
 		log_error(logger, "Error al crear hilo de mensajes");
 		return 2;
 	}
 	pthread_t hiloColas;
-	if(pthread_create(&hiloColas, NULL, manejarColas,NULL)){
+	if(pthread_create(&hiloColas, NULL, &manejarColas,NULL)){
 		log_error(logger, "Error al crear el hilo de colas");
 		return 2;
 	}
 	puts("S-AFA esta operativo");
 	iniciarConsola();
-	if(pthread_join(hiloConexiones, NULL)){
+	if(pthread_join(hiloConexiones, NULL) != 0){
 		puts("Error al joinear hilo de conexiones...");
 		return 2;
 	}
-	if(pthread_join(hiloMensajes, NULL)){
+	if(pthread_join(hiloMensajes, NULL) != 0){
 			log_error(logger, "Error al joinear el hilo de mensajes");
 			return 2;
-		}
-	if(pthread_join(hiloColas, NULL)){
+	}
+	if(pthread_join(hiloColas, NULL) != 0){
 		log_error(logger, "Error al joinear el hilo de colas");
 		return 2;
 	}
 	finalizarVariables();
-	puts("Finalizo S-AFA correctamente...");
+
 
 	return EXIT_SUCCESS;
 }
@@ -73,6 +85,7 @@ void inicializarVariables(){
 		puertoEscucha = config_get_int_value(config,"PUERTO");
 		maxConex = config_get_int_value(config, "MAX_CONEX");
 		multiprogramacion = config_get_int_value(config, "MULTIPROGRAMACION");
+		algoritmo = config_get_string_value(config, "ALGORITMO");
 	}else {
 		log_error(logger, "Error al cargar configuraciones");
 	}
@@ -83,12 +96,12 @@ void inicializarVariables(){
 	colaEjecucion = list_create();
 	colaBloqueados = list_create();
 	colaExit = list_create();
-
 	puts("Variables inicializadas...");
 }
 
 void finalizarVariables(){
 	close(socket_dam);
+	close(socketEscucha);
 	config_destroy(config);
 	list_destroy_and_destroy_elements(colaNew, free);
 	list_destroy_and_destroy_elements(colaReady, free);
@@ -96,29 +109,47 @@ void finalizarVariables(){
 	list_destroy_and_destroy_elements(colaBloqueados, free);
 	list_destroy_and_destroy_elements(colaExit, free);
 	list_destroy_and_destroy_elements(listaCpu, free);
+
+	puts("Finalizo S-AFA correctamente...");
+	exit(1);
+
 }
 
 void* manejarMensajes(){
-	ContentHeader* header;
+	ContentHeader* header = (ContentHeader*) malloc(sizeof(ContentHeader));
 	char* id;
 	DTB* dtb;
 	while(done == 0){
-		header = recibirHeader(socketEscucha);
+		header = recibirHeader(socket_dam);
 		// en el mensaje me mandan el Dgt para q lo busque en la lista.
 
 		switch(header->id){
 			case SAFA_BLOQUEAR_CPU:{
-				// recibo el Dtb del cpu y lo agrego a la cola de bloqueados
-				// viene con el program counter actualizado
-				DTB* dtb = malloc(sizeof(DTB));
-				list_remove_by_condition_with_param(colaNew, (void*) dtb->idGdt, buscarDTBporId);
-				recibirMensaje(socketEscucha, header->largo, &dtb);
-				list_add(colaBloqueados, (void*) dtb);
+				// debo recibir El id del Gdt y el Program counter del CPU y guardarlo en el dtb.
+				header = recibirHeader(socket_dam);
+				// primero recibo el id del Gdt
+				char* pc,id;
+				if(header->id == SAFA_ID_GDT_DEL_CPU){
+					recibirMensaje(socket_dam, header->largo, &id);
+					dtb->idGdt = atoi(id);
+					dtb = list_remove_by_condition_with_param(colaNew, (void*) id, buscarDTBporId);
 
+					header = recibirHeader(socket_dam);
+					if(header->id == SAFA_PC_DEL_CPU){
+						// recibo el program counter y lo guardo
+						recibirMensaje(socket_dam, header->largo, &pc);
+						dtb->programCounter = atoi(pc);
+						list_add(colaBloqueados, (void*) dtb);
+						// le saco el DTB asignado al cpu
+						CPU_struct* cpu = (CPU_struct*) list_remove_by_condition_with_param(listaCpu, (void*) id,buscarCpuAsignado);
+						cpu->gdtAsignado = -1;
+						list_add(listaCpu, (void*) cpu);
+					}
+				}
 				break;
 			}
 			case SAFA_DESBLOQUEAR_CPU:{
-				recibirMensaje(socketEscucha, header->largo, &id);
+				recibirMensaje(socket_dam, header->largo, &id);
 				// debo pasar el cpu de la lista de bloqueados a la lista de ready
 				if(dtb = (DTB*)list_remove_by_condition_with_param(colaBloqueados, (void*) id, buscarDTBporId)){
 					list_add(colaReady, (void*) dtb);
@@ -126,7 +157,7 @@ void* manejarMensajes(){
 				break;
 			}
 			case SAFA_MOVER_CPU_EXIT:{
-				recibirMensaje(socketEscucha, header->largo, &id);
+				recibirMensaje(socket_dam, header->largo, &id);
 				// debo mover el cpu que fallo a la cola de exit
 				// TODO ver de que cola tengo que sacar el GDT cuando lo muevo a exit
 				//	si de ready o de Ejecucion
@@ -137,28 +168,56 @@ void* manejarMensajes(){
 						enviarHeader(dtb->socket,"",CPU_FRENAR_EJECUCION);
 					}
 				}
+				break;
+			}
+			default: {
+				break;
 			}
 		}
 	}
+	puts("Finalizo thread de mensajes");
 }
 
 void* manejarColas(){
 	int totalEnMemoria;
+
 	while(done == 0){
 		totalEnMemoria = 0;
 		totalEnMemoria += list_size(colaReady);
 		totalEnMemoria += list_size(colaEjecucion);
 		totalEnMemoria += list_size(colaBloqueados);
 		if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
-				// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
-				// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
+			// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
+			// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
 			DTB* aux = (DTB*) list_remove(colaNew, 0);
 			list_add(colaReady, (void*) aux);
+			continue;
+		}
+		if(strcmp(algoritmo,"FIFO") == 0){
+			// compruebo si hay algun CPU sin un GDT asignado
+
+			if(list_size(colaReady) > 0 && list_size(listaCpu) > 0){
+				int sinAsignar = -1;
+				CPU_struct *cpu;
+				cpu = (CPU_struct*) list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
+				if(cpu){
+					// puedo asignar un CPU para que ejecute
+					// saco el primer elemento de la cola ready para pasarlo a la cola de ejecucion
+					DTB* dtb = (DTB*) list_remove(colaReady, 0);
+					// le asigno el id del gdt al cpu y lo envio
+					cpu->gdtAsignado = dtb->idGdt;
+					enviarDtb(cpu->socket, dtb);
+					dtb->socket = cpu->socket;
+					list_add(colaEjecucion, (void*) dtb);
+					list_add(listaCpu, (void*) cpu);
+				}
+			}
 		}
 	}
+	puts("Finalizo thread de colas");
 }
 
-void* conectarComponentes(){
+void conectarComponentes(){
 	// declaro variables
 	fd_set descriptoresLectura;
 	struct timeval timeout;
@@ -184,7 +243,7 @@ void* conectarComponentes(){
 		// se comprueba si algun cliente nuevo desea conectarse
 		if(FD_ISSET(socketEscucha, &descriptoresLectura)){
 			socketsCpu[numeroClientes] = servidorConectarComponente(socketEscucha, "S-AFA", "CPU");
-			numeroClientes++;
+			numeroClientes ++;
 
 			if(numeroClientes > maxConex){
 				// debo enviar mensaje para que finalice el CPU_struct
@@ -192,22 +251,24 @@ void* conectarComponentes(){
 				close(socketsCpu[numeroClientes -1]);
 				puts("Maxiamas conexiones alcanzadas...");
 				numeroClientes --;
-
 			}else {
 				// debo enviar el id al CPU
-				enviarHeader(socketsCpu[numeroClientes -1],ID, nextCpuId);
 
-				CPU_struct *CPU = malloc(sizeof(CPU_struct));
+				CPU_struct *CPU = (CPU_struct*) malloc(sizeof(CPU_struct));
 				CPU->id = nextCpuId;
 				CPU->socket = socketsCpu[numeroClientes -1];
-				CPU->asginado = 0;
-				list_add(listaCpu, CPU);
+				CPU->gdtAsignado = -1;
+				enviarHeader(CPU->socket ,"", nextCpuId);
+
+				list_add(listaCpu, (void*)CPU);
 				nextCpuId ++;
 				printf("Se conecto CPU con id: %d \n", CPU->id);
+
 			}
 		}
 
 	}
+	if(done != 0){
 	while(numeroClientes > 0){
 		CPU_struct *CPU = (CPU_struct*)list_get(listaCpu, numeroClientes -1);
 		printf("El CPU %d fue finalizado por comando exit",CPU->id);
@@ -216,9 +277,10 @@ void* conectarComponentes(){
 		free(CPU);
 	}
 	close(socketEscucha);
-	free(socketsCpu);
 	FD_ZERO(&descriptoresLectura);
-	return NULL;
+	}
+	puts("Finalizo thread de componentes");
+
 }
 
 //-------------------FUNCIONES DE CONSOLA------------------------
@@ -355,7 +417,6 @@ int cmdHola(){
 }
 int cmdSalir(){
 	done = 1;
-	finalizarVariables();
 	return 0;
 }
 int cmdHelp() {
@@ -474,8 +535,10 @@ void imprimirCola(void* elem){
 int cmdEjecutar(char* path){
 	// FUCNIONS DE CONSOLA QUE EJECUTA UN SCRIPT
 	DTB *dtb = (DTB*) malloc(sizeof(DTB));
+	dtb->pathScript = malloc(strlen(path) + 1);
+	strcpy(dtb->pathScript, path);
+	dtb->pathScript[strlen(path)] = '\0';
 	dtb->idGdt = idGdt;
-	dtb->pathScript = path;
 	dtb->flagInicio = 0;
 	dtb->programCounter = 0;
 

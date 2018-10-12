@@ -21,6 +21,7 @@
 #include <readline/history.h>
 #include <readline/chardefs.h>
 #include <string.h>
+#include <stdbool.h>
 
 
 
@@ -41,17 +42,10 @@ typedef struct COMANDO {
 typedef struct CPU_struct {
 	int id;
 	int socket;
-	int asginado;
+	int gdtAsignado;
 } CPU_struct;
 
-typedef struct DTB {
-	int idGdt;
-	char* pathScript;
-	int programCounter;
-	int flagInicio;
-	int socket;
-	t_list *archivosAbiertos;
-} __attribute__((packed)) DTB;
+
 
 
 int cmdHola(),cmdSalir(),cmdHelp(),cmdStatus(),cmdStatusDTB(), cmdEjecutar(), cmdFinalizar();
@@ -65,6 +59,7 @@ char* estado;
 int maxConex;
 int multiprogramacion;
 int idGdt = 1;
+char* algoritmo;
 t_list *listaCpu;
 t_list *colaNew;
 t_list *colaReady;
@@ -85,7 +80,7 @@ COMANDO comandos[] = {
 int socketEscucha,socket_cpu, socket_dam;
 
 void inicializarVariables();
-void* conectarComponentes();
+void conectarComponentes();
 void* manejarColas();
 void* manejarMensajes();
 void finalizarVariables();
