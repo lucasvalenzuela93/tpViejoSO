@@ -132,93 +132,56 @@ int enviarDtb(int socket, DTB* estructura){
 		puts("Error estructura");
 		return -1;
 	}
-//
-//	// serializo el DTB
-//	DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
-//	aux->flagInicio = estructura->flagInicio;
-//	aux->idGdt = estructura->idGdt;
-//	aux->programCounter = estructura->programCounter;
-//	aux->socket = estructura->socket;
-//	int tamanioString = (strlen(estructura->pathScript)* sizeof(char)) + 1;
-//	aux->tamanioPath = tamanioString;
-//	char path[tamanioString];
-//	strcpy(path, estructura->pathScript);
-
-	// serializo el DTB way #2
-	puts("Llega principio funcion");
-	// tamanio = ints + comas + tamanio string
-	int tamanio = 8 * sizeof(char) + strlen(estructura->pathScript) * sizeof(char);
-	char sendS[tamanio];
-	sprintf(sendS, "%d,%d,%d,%d,",
-			estructura->idGdt,
-			estructura->programCounter,
-			estructura->flagInicio,
-			estructura->socket);
-	strcat(sendS, &estructura->pathScript);
-	if(enviarHeader(socket,&sendS,ENVIAR_DTB) == -1){
+	// serializo el DTB
+	DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
+	aux->flagInicio = estructura->flagInicio;
+	aux->idGdt = estructura->idGdt;
+	aux->programCounter = estructura->programCounter;
+	aux->socket = estructura->socket;
+	int tamanioString = strlen(estructura->pathScript);
+	aux->tamanioPath = tamanioString;
+	if(enviarHeader(socket,"",ENVIAR_DTB) == -1){
 		// error al enviar header.
 		puts("Error al enviar header");
 		return -1;
 	}
-	if(enviarMensaje(socket,&sendS) < 0){
+	if(send(socket, aux,sizeof(DTB_aux), 0) <= 0){
 		// error al enviar el DTB
 		puts("Error al enviar DTB");
 		return -1;
 	}
-	printf("Mensaje Enviado: %s", sendS);
+	char* pathAEnviar = malloc(strlen(estructura->pathScript));
+	strcpy(pathAEnviar, estructura->pathScript);
+	enviarMensaje(socket, pathAEnviar);
 	return 1;
-
 }
 
 DTB* recibirDtb(int socket){
 
 	ContentHeader *header = recibirHeader(socket);
-	printf("\tid: %d \n largo: %d\n", header->id, header->largo);
 	if(header->id == ENVIAR_DTB){
-		puts("Entro if");
-		char* structS = calloc(sizeof(char),header->largo);
-		int reciv = recv(socket, structS, header->largo, 0);
-		if(reciv < 0){
-			puts("Error al recibir el mensaje");
+		DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
+
+		int reciv = recv(socket, aux, sizeof(DTB_aux), 0);
+		if(reciv <= 0){
+			puts("error al recibir DTB aux");
 			close(socket);
-			exit(1);
-		}else if(reciv == 0){
-			puts("Socket emisor desconectado...");
-			close(socket);
+			free(aux);
 			exit(1);
 		}
-//		DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
-//
-//		recibirMensaje(socket,sizeof(DTB_aux), aux);
-//
-//		char* path = malloc(aux->tamanioPath);
-//		int recive = recv(socket, path, aux->tamanioPath, 0);
-//		if(recive < 0){
-//			puts("Error al recibir el path");
-//			close(socket);
-//			exit(1);
-//		}else if(recive == 0){
-//			puts("Socket emisor desconectado Mensaje1");
-//			close(socket);
-//			exit(1);
-//		}
-		printf(" estrucutra: %s", structS);
-		char** respuesta = string_split(structS, ",");
+		printf("Tamaño path: %d", aux->tamanioPath);
+		char* path = malloc(aux->tamanioPath);
+		recibirMensaje(socket, aux->tamanioPath, &path);
 		DTB* dtb = (DTB*) malloc(sizeof(DTB));
-		dtb->idGdt = respuesta[0];
-		dtb->flagInicio = respuesta[3];
-		dtb->pathScript = respuesta[2];
-		dtb->programCounter = respuesta[1];
-		dtb->socket = respuesta[4];
-//		dtb->idGdt = aux->idGdt;
-//		dtb->flagInicio = aux->flagInicio;
-//		dtb->programCounter = aux->programCounter;
-//		dtb->socket = aux->socket;
-//		dtb->pathScript = path;
-//		free(path);
+		dtb->idGdt = aux->idGdt;
+		dtb->flagInicio = aux->flagInicio;
+		dtb->programCounter = aux->programCounter;
+		dtb->socket = aux->socket;
+		dtb->pathScript = malloc(strlen(path));
+		strcpy(dtb->pathScript, path);
+		free(path);
 		return dtb;
 	}
-
 	return NULL;
 }
 

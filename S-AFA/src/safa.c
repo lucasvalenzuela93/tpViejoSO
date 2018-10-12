@@ -57,15 +57,15 @@ int main(void) {
 	}
 	puts("S-AFA esta operativo");
 	iniciarConsola();
-	if(pthread_join(hiloConexiones, NULL)){
+	if(pthread_join(hiloConexiones, NULL) != 0){
 		puts("Error al joinear hilo de conexiones...");
 		return 2;
 	}
-	if(pthread_join(hiloMensajes, NULL)){
+	if(pthread_join(hiloMensajes, NULL) != 0){
 			log_error(logger, "Error al joinear el hilo de mensajes");
 			return 2;
 	}
-	if(pthread_join(hiloColas, NULL)){
+	if(pthread_join(hiloColas, NULL) != 0){
 		log_error(logger, "Error al joinear el hilo de colas");
 		return 2;
 	}
@@ -101,6 +101,7 @@ void inicializarVariables(){
 
 void finalizarVariables(){
 	close(socket_dam);
+	close(socketEscucha);
 	config_destroy(config);
 	list_destroy_and_destroy_elements(colaNew, free);
 	list_destroy_and_destroy_elements(colaReady, free);
@@ -174,6 +175,7 @@ void* manejarMensajes(){
 			}
 		}
 	}
+	puts("Finalizo thread de mensajes");
 }
 
 void* manejarColas(){
@@ -205,25 +207,14 @@ void* manejarColas(){
 					// le asigno el id del gdt al cpu y lo envio
 					cpu->gdtAsignado = dtb->idGdt;
 					enviarDtb(cpu->socket, dtb);
-//					ContentHeader* header = malloc(sizeof(ContentHeader));
-//					header = recibirHeader(cpu->socket);
 					dtb->socket = cpu->socket;
 					list_add(colaEjecucion, (void*) dtb);
 					list_add(listaCpu, (void*) cpu);
-//					if(header->id == RTA_OK){
-//						// MUEVO EL CPU A LA COLA DE EJECUCION
-//
-//					}else {
-//						// FALLO ALGO VUELVO ATRAS LOS CAMBIOS
-//						cpu->gdtAsignado = -1;
-//						list_add(listaCpu, (void*) cpu);
-//					}
 				}
-			}else {
-				continue;
 			}
 		}
 	}
+	puts("Finalizo thread de colas");
 }
 
 void conectarComponentes(){
@@ -288,6 +279,7 @@ void conectarComponentes(){
 	close(socketEscucha);
 	FD_ZERO(&descriptoresLectura);
 	}
+	puts("Finalizo thread de componentes");
 
 }
 
@@ -425,7 +417,6 @@ int cmdHola(){
 }
 int cmdSalir(){
 	done = 1;
-	finalizarVariables();
 	return 0;
 }
 int cmdHelp() {
@@ -544,8 +535,10 @@ void imprimirCola(void* elem){
 int cmdEjecutar(char* path){
 	// FUCNIONS DE CONSOLA QUE EJECUTA UN SCRIPT
 	DTB *dtb = (DTB*) malloc(sizeof(DTB));
+	dtb->pathScript = malloc(strlen(path) + 1);
+	strcpy(dtb->pathScript, path);
+	dtb->pathScript[strlen(path)] = '\0';
 	dtb->idGdt = idGdt;
-	dtb->pathScript = path;
 	dtb->flagInicio = 0;
 	dtb->programCounter = 0;
 
