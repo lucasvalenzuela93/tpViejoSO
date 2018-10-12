@@ -49,7 +49,7 @@ void esperarConexiones(){
 		select(100, &descLectura, NULL,NULL,&timeout);
 
 		if(FD_ISSET(socketEscucha, &descLectura)){
-			socketCpu[numeroClientes] = servidorConectarComponente(socketEscucha, "FM9", "CPU");
+			socketCpu[numeroClientes] = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "CPU");
 			numeroClientes++;
 			CPU_struct *cpu = (CPU_struct*) malloc(sizeof(CPU_struct));
 			cpu->id = nextCpuId;
