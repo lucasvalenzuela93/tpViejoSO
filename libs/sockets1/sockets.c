@@ -221,7 +221,8 @@ ContentHeader * recibirHeader(int socketEmisor){
 		puts("Error en recibir header");
 		exit(1);
 	} else if (recibido == 0) {
-		puts("Socket emisor desconectado header");
+		if (DEBUG_SOCKET) puts("Socket emisor desconectado header");
+
 		close(socketEmisor);
 		free(header);
 		exit(1);
@@ -237,7 +238,8 @@ void recibirMensaje(int socketEmisor, int tamanioMensaje, char** bufferMensaje){
 		puts("Error en recibir mensaje");
 		exit(1);
 	} else if (recibido == 0){
-		puts("Socket Emisor desconectado mensaje");
+		if (DEBUG_SOCKET) puts("Socket Emisor desconectado mensaje");
+
 		close(socketEmisor);
 		free(*bufferMensaje);
 		exit(1);
