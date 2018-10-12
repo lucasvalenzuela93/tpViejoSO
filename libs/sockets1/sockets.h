@@ -21,6 +21,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <arpa/inet.h>
+#include <commons/collections/list.h>
 
 int MAX_CONEX;
 
@@ -40,6 +41,7 @@ enum PROTOCOLO {
 	CPU_CAIDO = 8,
 	CPU_EJECUTAR = 29,
 	CPU_FRENAR_EJECUCION = 30,
+	CPU_RECIBIR_DTB = 31,
 
 
 	//MENSAJES ENTRE CPU A DAM
@@ -53,6 +55,8 @@ enum PROTOCOLO {
 	SAFA_BLOQUEAR_CPU = 26,
 	SAFA_DESBLOQUEAR_CPU = 27,
 	SAFA_MATAR_CPU = 28,
+	SAFA_ID_GDT_DEL_CPU = 34,
+	SAFA_PC_DEL_CPU = 35,
 
 	// MENSAJES FM9 Y MDJ(FILES SYSTEM)
 	DAM_GET_PATH_MDJ = 14,
@@ -75,6 +79,13 @@ enum PROTOCOLO {
 	MDJ_ARCHIVO_INVALIDO = 23,
 	MDJ_CREACION_ARCHIVO_OK = 24,
 	MDJ_ERROR_CREACION_ARCHIVO = 25,
+
+	// MENSAJES DE RESPUESTA
+
+	RTA_OK = 32,
+	RTA_ERROR = 33,
+	NUEVA_CONEXION = 35,
+	ENVIAR_DTB = 36,
 
 
 
@@ -115,10 +126,28 @@ typedef struct {
   int largo;
 } __attribute__((packed)) ContentHeader;
 
+typedef struct DTB {
+	int idGdt;
+	char* pathScript;
+	int programCounter;
+	int flagInicio;
+	int socket;
+} __attribute__((packed)) DTB;
+
+typedef struct DTB_aux {
+	int idGdt;
+	int programCounter;
+	int flagInicio;
+	int socket;
+	int tamanioPath;
+} __attribute__((packed)) DTB_aux;
+
 //prototipos
 int conectarClienteA(int, char*);
 int enviarInformacion(int, void*, int*);
 int socketServidor(int, char*, int);
+int enviarDtb(int, DTB*);
+DTB* recibirDtb(int);
 int enviarHeader(int, char*, int);
 int enviarMensaje(int, char*);
 void recibirMensaje(int, int, char**);

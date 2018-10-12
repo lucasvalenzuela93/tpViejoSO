@@ -115,7 +115,10 @@ int enviarInformacion(int socket, void *texto, int *bytesAMandar) {
 	int bytesEnviados;
 	while (totalEnviados < *bytesAMandar) {
 		bytesEnviados = send(socket, texto + totalEnviados, bytesRestantes, 0);
-		if (bytesEnviados == -1) { break; }
+		if (bytesEnviados == -1) {
+			puts("Error...");
+			break;
+		}
 		totalEnviados += bytesEnviados;
 		bytesRestantes -= bytesEnviados;
 	}
@@ -123,6 +126,102 @@ int enviarInformacion(int socket, void *texto, int *bytesAMandar) {
 	*bytesAMandar = totalEnviados; // devuelve aquí la cantidad que se termino por mandar, se deberían haber mandado todos
 	return bytesEnviados == -1 ? -1 : 0; // devuelve -1 si hay fallo, 0 si esta bien
 }
+
+int enviarDtb(int socket, DTB* estructura){
+	if(!estructura){
+		puts("Error estructura");
+		return -1;
+	}
+//
+//	// serializo el DTB
+//	DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
+//	aux->flagInicio = estructura->flagInicio;
+//	aux->idGdt = estructura->idGdt;
+//	aux->programCounter = estructura->programCounter;
+//	aux->socket = estructura->socket;
+//	int tamanioString = (strlen(estructura->pathScript)* sizeof(char)) + 1;
+//	aux->tamanioPath = tamanioString;
+//	char path[tamanioString];
+//	strcpy(path, estructura->pathScript);
+
+	// serializo el DTB way #2
+	puts("Llega principio funcion");
+	// tamanio = ints + comas + tamanio string
+	int tamanio = 8 * sizeof(char) + strlen(estructura->pathScript) * sizeof(char);
+	char sendS[tamanio];
+	sprintf(sendS, "%d,%d,%d,%d,",
+			estructura->idGdt,
+			estructura->programCounter,
+			estructura->flagInicio,
+			estructura->socket);
+	strcat(sendS, &estructura->pathScript);
+	if(enviarHeader(socket,&sendS,ENVIAR_DTB) == -1){
+		// error al enviar header.
+		puts("Error al enviar header");
+		return -1;
+	}
+	if(enviarMensaje(socket,&sendS) < 0){
+		// error al enviar el DTB
+		puts("Error al enviar DTB");
+		return -1;
+	}
+	printf("Mensaje Enviado: %s", sendS);
+	return 1;
+
+}
+
+DTB* recibirDtb(int socket){
+
+	ContentHeader *header = recibirHeader(socket);
+	printf("\tid: %d \n largo: %d\n", header->id, header->largo);
+	if(header->id == ENVIAR_DTB){
+		puts("Entro if");
+		char* structS = calloc(sizeof(char),header->largo);
+		int reciv = recv(socket, structS, header->largo, 0);
+		if(reciv < 0){
+			puts("Error al recibir el mensaje");
+			close(socket);
+			exit(1);
+		}else if(reciv == 0){
+			puts("Socket emisor desconectado...");
+			close(socket);
+			exit(1);
+		}
+//		DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
+//
+//		recibirMensaje(socket,sizeof(DTB_aux), aux);
+//
+//		char* path = malloc(aux->tamanioPath);
+//		int recive = recv(socket, path, aux->tamanioPath, 0);
+//		if(recive < 0){
+//			puts("Error al recibir el path");
+//			close(socket);
+//			exit(1);
+//		}else if(recive == 0){
+//			puts("Socket emisor desconectado Mensaje1");
+//			close(socket);
+//			exit(1);
+//		}
+		printf(" estrucutra: %s", structS);
+		char** respuesta = string_split(structS, ",");
+		DTB* dtb = (DTB*) malloc(sizeof(DTB));
+		dtb->idGdt = respuesta[0];
+		dtb->flagInicio = respuesta[3];
+		dtb->pathScript = respuesta[2];
+		dtb->programCounter = respuesta[1];
+		dtb->socket = respuesta[4];
+//		dtb->idGdt = aux->idGdt;
+//		dtb->flagInicio = aux->flagInicio;
+//		dtb->programCounter = aux->programCounter;
+//		dtb->socket = aux->socket;
+//		dtb->pathScript = path;
+//		free(path);
+		return dtb;
+	}
+
+	return NULL;
+}
+
 
 int enviarHeader(int socketDestino, char* mensaje, int id) {
 	int tamanioMensaje = strlen(mensaje);
@@ -156,10 +255,10 @@ ContentHeader * recibirHeader(int socketEmisor){
 
 	recibido = recv(socketEmisor, header, sizeof(ContentHeader), 0);
 	if (recibido < 0) {
-		if (DEBUG_SOCKET) puts("Error en recibir header");
+		puts("Error en recibir header");
 		exit(1);
 	} else if (recibido == 0) {
-		if (DEBUG_SOCKET) puts("Socket emisor desconectado");
+		puts("Socket emisor desconectado header");
 		close(socketEmisor);
 		free(header);
 		exit(1);
@@ -172,16 +271,16 @@ void recibirMensaje(int socketEmisor, int tamanioMensaje, char** bufferMensaje){
 
 	recibido = recv(socketEmisor, *bufferMensaje, tamanioMensaje, 0);
 	if(recibido < 0){
-		if (DEBUG_SOCKET) puts("Error en recibir mensaje");
+		puts("Error en recibir mensaje");
 		exit(1);
 	} else if (recibido == 0){
-		if (DEBUG_SOCKET) puts("Socket Emisor desconectado");
+		puts("Socket Emisor desconectado mensaje");
 		close(socketEmisor);
 		free(*bufferMensaje);
 		exit(1);
 	}
 	(*bufferMensaje) [tamanioMensaje] = '\0';
-	if (DEBUG_SOCKET) printf("El mensaje recibido *recibirMensaje* es: %s\n", *bufferMensaje);
+	if(DEBUG_SOCKET) printf("El mensaje recibido *recibirMensaje* es: %s\n", *bufferMensaje);
 }
 
 int servidorConectarComponente(int socketEscucha, char* servidor, char* componente){
