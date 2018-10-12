@@ -218,10 +218,11 @@ ContentHeader * recibirHeader(int socketEmisor){
 
 	recibido = recv(socketEmisor, header, sizeof(ContentHeader), 0);
 	if (recibido < 0) {
-		if (DEBUG_SOCKET) puts("Error en recibir header");
+		puts("Error en recibir header");
 		exit(1);
 	} else if (recibido == 0) {
 		if (DEBUG_SOCKET) puts("Socket emisor desconectado header");
+
 		close(socketEmisor);
 		free(header);
 		exit(1);
@@ -234,10 +235,11 @@ void recibirMensaje(int socketEmisor, int tamanioMensaje, char** bufferMensaje){
 
 	recibido = recv(socketEmisor, *bufferMensaje, tamanioMensaje, 0);
 	if(recibido < 0){
-		if (DEBUG_SOCKET) puts("Error en recibir mensaje");
+		puts("Error en recibir mensaje");
 		exit(1);
 	} else if (recibido == 0){
 		if (DEBUG_SOCKET) puts("Socket Emisor desconectado mensaje");
+
 		close(socketEmisor);
 		free(*bufferMensaje);
 		exit(1);
