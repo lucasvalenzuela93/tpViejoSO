@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <sockets1/sockets.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
 
 const char* IP = "127.0.0.1";
 const int PUERTO_ESCUCHA = 8101;
@@ -25,6 +26,7 @@ t_config* config;
 char* ipEscucha;
 int puertoEscucha;
 int socketEscucha, socketCpu, socketDam;
+t_list *listaCpu;
 
 void iniciarVariables();
 void finalizarVariables();

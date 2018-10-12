@@ -14,10 +14,9 @@ int main(void) {
 	puts("Iniciando Funes Memory...");
 	iniciarVariables();
 
-	socketEscucha = socketServidor(PUERTO_ESCUCHA, IP, 50);
+	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
-	socketCpu = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "CPU");
 
 	esperarConexiones();
 
@@ -33,7 +32,6 @@ void esperarConexiones(){
 	int numeroClientes = 0;
 	int socketCpu[100];
 	int nextCpuId = 1;
-	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
 	while(true){
 		timeout.tv_sec = 1;
@@ -53,13 +51,13 @@ void esperarConexiones(){
 		if(FD_ISSET(socketEscucha, &descLectura)){
 			socketCpu[numeroClientes] = servidorConectarComponente(socketEscucha, "FM9", "CPU");
 			numeroClientes++;
-			CPU_struct *cpu = malloc(sizeof(CPU_struct));
+			CPU_struct *cpu = (CPU_struct*) malloc(sizeof(CPU_struct));
 			cpu->id = nextCpuId;
 			cpu->socket = socketCpu[numeroClientes - 1];
-			nextCpuId ++;
 			printf("Se conecto CPU con id: %d \n", cpu->id);
+			list_add(listaCpu, (void*) cpu);
 			free(cpu);
-
+			nextCpuId ++;
 
 		}
 	}
@@ -74,6 +72,7 @@ void iniciarVariables(){
 	}
 	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
 	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
+	listaCpu = list_create();
 }
 
 void finalizarVariables(){
