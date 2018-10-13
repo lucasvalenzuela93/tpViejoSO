@@ -44,7 +44,7 @@ int conectarClienteA(int puerto, char* ip) {
 
 	 freeaddrinfo(informacionServidor);  // No lo necesitamos mas
 	 free(puertoDestino);
-	 puts("Conectado a servidor");
+	 if (DEBUG_SOCKET) puts("Conectado a servidor");
 	 return socketDelServidor;
 }
 
@@ -92,7 +92,7 @@ int aceptarConexion(int miSocket) {
 		perror("Listen error");
 		exit(1);
 	}
-	puts("Escuchando nuevas conexiones...");
+	if (DEBUG_SOCKET) puts("Escuchando nuevas conexiones...");
 
 	//Aceptar conexion
 	//Ciclo de accept, bloquea el proceso hasta que cliente se concete
@@ -169,7 +169,6 @@ DTB* recibirDtb(int socket){
 			free(aux);
 			exit(1);
 		}
-		printf("Tamaño path: %d", aux->tamanioPath);
 		char* path = malloc(aux->tamanioPath);
 		recibirMensaje(socket, aux->tamanioPath, &path);
 		DTB* dtb = (DTB*) malloc(sizeof(DTB));

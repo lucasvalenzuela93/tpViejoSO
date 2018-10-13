@@ -22,6 +22,7 @@
 #include <readline/chardefs.h>
 #include <string.h>
 #include <stdbool.h>
+#include <generales/generales.h>
 
 
 
@@ -58,6 +59,7 @@ char* IP;
 char* estado;
 int maxConex;
 int multiprogramacion;
+int quantum;
 int idGdt = 1;
 char* algoritmo;
 t_list *listaCpu;

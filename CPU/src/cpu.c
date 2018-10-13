@@ -15,8 +15,26 @@ int main(void) {
 	inciarVariables();
 
 	socketSAFA = clienteConectarComponente("CPU","S-AFA", puertoSafa, ipSafa);
+	// RECIBO EL HEADER DEL SAFA CON MI ID Y LA RAFAGA
+	if(recv(socketSAFA, &self, sizeof(InfoCpu), 0) < 0){
+		puts("Error al recibir informacion del handshake con el S-AFA");
+		close(socketSAFA);
+		config_destroy(config);
+		exit(1);
+	}
+
 	socketDam = clienteConectarComponente("CPU","DAM", puertoDam, ipDam);
 	socketFunesMemory = clienteConectarComponente("CPU","FUNES_MEMORY", puertoFunesMemory, ipFunesMemory);
+
+	// ESPERO A RECIBIR EL DTB DE SAFA
+	DTB* dtb = recibirDtb(socketSAFA);
+	if(dtb->flagInicio == 0){
+		// ES EL DTB DUMMY
+		puts("DTB Dummy");
+	}else {
+		// EJECUTO NORMAL
+		puts(" DTB Normal");
+	}
 
 	finalizarVariables();
 	puts("Finalizo CPU");
@@ -40,6 +58,8 @@ void inciarVariables(){
 	puertoDam = config_get_int_value(config, "PUERTO_DAM");
 	puertoFunesMemory = config_get_int_value(config, "PUERTO_FUNES_MEMORY");
 
+	self = (InfoCpu*) malloc(sizeof(InfoCpu));
+
 	puts("Variables iniciadas...");
 
 }
@@ -47,4 +67,5 @@ void finalizarVariables(){
 	shutdown(socketSAFA,2);
 	shutdown(socketDam,2);
 	shutdown(socketFunesMemory,2);
+	config_destroy(config);
 }
