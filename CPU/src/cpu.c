@@ -27,20 +27,31 @@ int main(void) {
 	socketFunesMemory = clienteConectarComponente("CPU","FUNES_MEMORY", puertoFunesMemory, ipFunesMemory);
 
 	// ESPERO A RECIBIR EL DTB DE SAFA
-	DTB* dtb = recibirDtb(socketSAFA);
-	if(dtb->flagInicio == 0){
-		// ES EL DTB DUMMY
-		puts("DTB Dummy");
-	}else {
-		// EJECUTO NORMAL
-		puts(" DTB Normal");
-	}
+
 
 	finalizarVariables();
 	puts("Finalizo CPU");
 	return EXIT_SUCCESS;
 }
 
+void recibirMensajes(){
+	DTB* dtb = recibirDtb(socketSAFA);
+		if(dtb->flagInicio == 0){
+			// ES EL DTB DUMMY
+			puts("DTB Dummy");
+			// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
+			enviarHeader(socketDam,CPU_PEDIR_ARCHIVO);
+			// LE DIGO AL SAFA QUE ME BLOQUEE
+			enviarHeader(socketSAFA, SAFA_BLOQUEAR_CPU);
+			enviarDtb(socketSAFA, dtb);
+			free(dtb);
+			// ESPERO A Q ME ENVIEN UN NUEVO GDT
+			recibirMensajes();
+		}else {
+			// EJECUTO NORMAL
+			puts(" DTB Normal");
+		}
+}
 
 void inciarVariables(){
 	logger = log_create("log.txt", "CPU", true, LOG_LEVEL_INFO);

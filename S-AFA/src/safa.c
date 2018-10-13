@@ -179,6 +179,25 @@ void* manejarMensajes(){
 				}
 				break;
 			}
+			case MDJ_PATH_GET_OK:{
+				ContentHeader *header = recibirHeader(socket_dam);
+				DTB *dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporId);
+				if(dtb){
+					list_add(colaReady, (void*) dtb);
+				}
+				free(header);
+				break;
+			}
+			case MDJ_PATH_GET_ERROR:{
+				ContentHeader *header = recibirHeader(socket_dam);
+				// en el header recibo el id del DTB
+				DTB *dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporId);
+				if(dtb){
+					list_add(colaExit, (void*) dtb);
+				}
+				free(header);
+				break;
+			}
 			default: {
 				break;
 			}
@@ -306,8 +325,6 @@ void conectarComponentes(){
 				if(send(CPU->socket, infoCpu, sizeof(InfoCpu), 0) <= 0){
 					puts("Error al enviar handshake con el CPU");
 				}
-
-//				enviarHeader(CPU->socket ,"", nextCpuId);
 
 				list_add(listaCpu, (void*)CPU);
 				nextCpuId ++;
