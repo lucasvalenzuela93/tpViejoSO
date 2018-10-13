@@ -15,5 +15,6 @@ C_DEPS :=
 SUBDIRS := \
 commons \
 commons/collections \
+generales \
 sockets1 \
 

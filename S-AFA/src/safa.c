@@ -16,6 +16,11 @@ int buscarDTBporId(void* dtbVoid,void* dtbId){
 	int id = atoi((char*) dtbId);
 	return dtb->idGdt == id;
 }
+int buscarDTBDummy(void* dtbVoid, void* flagDummy){
+	DTB* dtb = (DTB*) dtbVoid;
+	int flag = (int) flagDummy;
+	return dtb->flagInicio == flag;
+}
 
 int filtrarCpu(void* cpuVoid,void* id){
 	CPU_struct* cpu = (CPU_struct*) cpuVoid;
@@ -50,6 +55,8 @@ int main(void) {
 		log_error(logger, "Error al crear hilo de mensajes");
 		return 2;
 	}
+
+
 	pthread_t hiloColas;
 	if(pthread_create(&hiloColas, NULL, &manejarColas,NULL)){
 		log_error(logger, "Error al crear el hilo de colas");
@@ -86,6 +93,7 @@ void inicializarVariables(){
 		maxConex = config_get_int_value(config, "MAX_CONEX");
 		multiprogramacion = config_get_int_value(config, "MULTIPROGRAMACION");
 		algoritmo = config_get_string_value(config, "ALGORITMO");
+		quantum = config_get_int_value(config, "QUANTUM");
 	}else {
 		log_error(logger, "Error al cargar configuraciones");
 	}
@@ -96,6 +104,7 @@ void inicializarVariables(){
 	colaEjecucion = list_create();
 	colaBloqueados = list_create();
 	colaExit = list_create();
+
 	puts("Variables inicializadas...");
 }
 
@@ -170,6 +179,25 @@ void* manejarMensajes(){
 				}
 				break;
 			}
+			case MDJ_PATH_GET_OK:{
+				ContentHeader *header = recibirHeader(socket_dam);
+				DTB *dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporId);
+				if(dtb){
+					list_add(colaReady, (void*) dtb);
+				}
+				free(header);
+				break;
+			}
+			case MDJ_PATH_GET_ERROR:{
+				ContentHeader *header = recibirHeader(socket_dam);
+				// en el header recibo el id del DTB
+				DTB *dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporId);
+				if(dtb){
+					list_add(colaExit, (void*) dtb);
+				}
+				free(header);
+				break;
+			}
 			default: {
 				break;
 			}
@@ -181,17 +209,41 @@ void* manejarMensajes(){
 void* manejarColas(){
 	int totalEnMemoria;
 
+	// agrego el DTB Dummy a Ready
+	DTB* dummy = (DTB*) malloc(sizeof(DTB));
+	dummy->flagInicio = 0;
+	dummy->idGdt = -1;
+	dummy->programCounter = 0;
+	dummy->socket = -1;
+	dummy->pathScript = malloc(strlen("vacio") + 1);
+	strcpy(dummy->pathScript, "vacio");
+	dummy->pathScript[strlen("vacio")] = '\0';
+
+	list_add(colaReady, (void*)dummy);
+
 	while(done == 0){
 		totalEnMemoria = 0;
-		totalEnMemoria += list_size(colaReady);
+		totalEnMemoria += list_size(colaReady) - 1;
 		totalEnMemoria += list_size(colaEjecucion);
 		totalEnMemoria += list_size(colaBloqueados);
+
 		if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
 			// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
 			// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
-			DTB* aux = (DTB*) list_remove(colaNew, 0);
-			list_add(colaReady, (void*) aux);
-			continue;
+			int flagDummy = 0;
+			DTB* dummy = (DTB*) list_find_with_param(colaReady, (void*) flagDummy, buscarDTBDummy);
+			// CHEQUEO QUE EL DUMMY ESTE LIBERADO
+			if(dummy && dummy->idGdt == -1 && dummy->flagInicio == 0){
+				printf("Dummy encontrado, id: %d\n", dummy->idGdt);
+				list_remove_by_condition_with_param(colaReady, (void*) flagDummy, buscarDTBDummy);
+				DTB* aux = (DTB*) list_get(colaNew, 0);
+				free(dummy->pathScript);
+				dummy->pathScript = malloc(strlen(aux->pathScript) + 1);
+				strcpy(dummy->pathScript, aux->pathScript);
+				dummy->pathScript[strlen(aux->pathScript)] = '\0';
+				dummy->idGdt = aux->idGdt;
+				list_add(colaReady, (void*) dummy);
+			}
 		}
 		if(strcmp(algoritmo,"FIFO") == 0){
 			// compruebo si hay algun CPU sin un GDT asignado
@@ -200,17 +252,25 @@ void* manejarColas(){
 				int sinAsignar = -1;
 				CPU_struct *cpu;
 				cpu = (CPU_struct*) list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
-				if(cpu){
+				if(cpu && cpu->gdtAsignado == -1){
 					// puedo asignar un CPU para que ejecute
 					// saco el primer elemento de la cola ready para pasarlo a la cola de ejecucion
-					DTB* dtb = (DTB*) list_remove(colaReady, 0);
+					DTB* dtb = (DTB*) list_get(colaReady, 0);
 					// le asigno el id del gdt al cpu y lo envio
-					cpu->gdtAsignado = dtb->idGdt;
-					enviarDtb(cpu->socket, dtb);
-					dtb->socket = cpu->socket;
-					list_add(colaEjecucion, (void*) dtb);
-					list_add(listaCpu, (void*) cpu);
+
+					if(dtb->idGdt != -1){
+						// REMUEVO EL PRIMER ELEMENTO DE LA COLA DE READY UNA VEZ QUE SE
+						// QUE SI ES EL DUMMY ESTA ASIGNADO
+						puts("mando a ejecutar");
+						list_remove(colaReady, 0);
+						cpu->gdtAsignado = dtb->idGdt;
+						enviarDtb(cpu->socket, dtb);
+						dtb->socket = cpu->socket;
+						list_add(colaEjecucion, (void*) dtb);
+						puts("envio DTB a CPU");
+					}
 				}
+				list_add(listaCpu, (void*) cpu);
 			}
 		}
 	}
@@ -258,7 +318,13 @@ void conectarComponentes(){
 				CPU->id = nextCpuId;
 				CPU->socket = socketsCpu[numeroClientes -1];
 				CPU->gdtAsignado = -1;
-				enviarHeader(CPU->socket ,"", nextCpuId);
+
+				InfoCpu* infoCpu = malloc(sizeof(InfoCpu));
+				infoCpu->id = nextCpuId;
+				infoCpu->rafaga = quantum;
+				if(send(CPU->socket, infoCpu, sizeof(InfoCpu), 0) <= 0){
+					puts("Error al enviar handshake con el CPU");
+				}
 
 				list_add(listaCpu, (void*)CPU);
 				nextCpuId ++;
@@ -437,7 +503,7 @@ int cmdStatus(){
 	if(list_size(colaNew) == 0){
 		puts("Vacia...");
 	}else {
-		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		puts("Id\tPath\t\t\tPC\tFlag\tTipo");
 		list_iterate(colaNew, imprimirCola);
 		puts("-------------------------------------");
 	}
@@ -446,7 +512,7 @@ int cmdStatus(){
 	if(list_size(colaReady) == 0){
 		puts("Vacia...");
 	}else {
-		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		puts("Id\tPath\t\t\tPC\tFlag\tTipo");
 		list_iterate(colaReady, imprimirCola);
 		puts("-------------------------------------");
 	}
@@ -454,7 +520,7 @@ int cmdStatus(){
 	if(list_size(colaEjecucion) == 0){
 		puts("Vacia...");
 	}else {
-		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		puts("Id\tPath\t\t\tPC\tFlag\tTipo");
 		list_iterate(colaEjecucion, imprimirCola);
 		puts("-------------------------------------");
 	}
@@ -462,7 +528,7 @@ int cmdStatus(){
 	if(list_size(colaBloqueados) == 0){
 		puts("Vacia...");
 	}else {
-		puts("Id\tPath\t\t\tPC\tFlag Inicio\t");
+		puts("Id\tPath\t\t\tPC\tFlag\tTipo");
 		list_iterate(colaBloqueados, imprimirCola);
 		puts("-------------------------------------");
 	}
@@ -529,7 +595,13 @@ int cmdStatusDTB(char* id){
 
 void imprimirCola(void* elem){
 	DTB* elemento = (DTB*) elem;
-	printf("%i\t%s\t\t\t%i\t%i\n", elemento->idGdt, elemento->pathScript, elemento->programCounter, elemento->flagInicio);
+	printf("%i\t%s\t\t\t%i\t%i", elemento->idGdt, elemento->pathScript, elemento->programCounter, elemento->flagInicio);
+	if(elemento->flagInicio == 1){
+		printf("\tNORMAL\n");
+	}else {
+		printf("\tDUMMY\n");
+	}
+
 }
 
 int cmdEjecutar(char* path){
@@ -539,7 +611,7 @@ int cmdEjecutar(char* path){
 	strcpy(dtb->pathScript, path);
 	dtb->pathScript[strlen(path)] = '\0';
 	dtb->idGdt = idGdt;
-	dtb->flagInicio = 0;
+	dtb->flagInicio = 1;
 	dtb->programCounter = 0;
 
 	list_add(colaNew,(void*) dtb);
