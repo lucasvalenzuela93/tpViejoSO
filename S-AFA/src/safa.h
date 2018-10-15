@@ -44,6 +44,7 @@ typedef struct CPU_struct {
 	int id;
 	int socket;
 	int gdtAsignado;
+	pthread_t hilo;
 } CPU_struct;
 
 
@@ -87,6 +88,7 @@ void* manejarColas();
 void* manejarMensajes();
 void finalizarVariables();
 void imprimirCola();
+void recibirMensajesCpu();
 // ------------------FUNCIONES CONSOLA--------------------
 
 
