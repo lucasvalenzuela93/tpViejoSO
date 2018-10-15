@@ -14,10 +14,12 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <pthread.h>
 
 typedef struct CPU_struct {
 	int id;
 	int socket;
+	pthread_t hilo;
 } CPU_struct;
 
 t_config *config;
@@ -28,9 +30,12 @@ char* ipFileSystem;
 char* ipFunesMemory;
 int socketSafa, socketEscucha, socketCpu, socketFileSystem, socketFunesMemory;
 t_list *listaCpu;
+pthread_mutex_t mutexEnviarMDJ;
 
 void iniciarVariables();
 void finalizarVariables();
 void esperarConexiones();
+void recibirYEnviarCPU(void*);
+void recibirYEnviarMDJ();
 
 #endif /* SRC_DAM_H_ */

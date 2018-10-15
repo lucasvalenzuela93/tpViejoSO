@@ -181,9 +181,26 @@ DTB* recibirDtb(int socket){
 		free(path);
 		return dtb;
 	}
+	puts("Header incorrecto");
 	return NULL;
 }
 
+int enviarHeaderYMensaje(int socket, char* mensaje, int id){
+	ContentHeader *header = malloc(sizeof(ContentHeader));
+	if(enviarHeader(socket,mensaje,id) < 0){
+		puts("error al enviar el header");
+		free(header);
+		return -1;
+	}
+	if(enviarMensaje(socket,strlen(mensaje)) < 0){
+		puts("error al enviar mensaje");
+		free(header);
+		return -1;
+	}
+	free(header);
+	return 1;
+
+}
 
 int enviarHeader(int socketDestino, char* mensaje, int id) {
 	int tamanioMensaje = strlen(mensaje);

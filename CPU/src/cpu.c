@@ -27,6 +27,7 @@ int main(void) {
 	socketFunesMemory = clienteConectarComponente("CPU","FUNES_MEMORY", puertoFunesMemory, ipFunesMemory);
 
 	// ESPERO A RECIBIR EL DTB DE SAFA
+	recibirMensajes();
 
 
 	finalizarVariables();
@@ -35,22 +36,36 @@ int main(void) {
 }
 
 void recibirMensajes(){
-	DTB* dtb = recibirDtb(socketSAFA);
+	DTB* dtb;
+	while(true){
+		dtb = recibirDtb(socketSAFA);
 		if(dtb->flagInicio == 0){
 			// ES EL DTB DUMMY
 			puts("DTB Dummy");
 			// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
-			enviarHeader(socketDam,CPU_PEDIR_ARCHIVO);
+			enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
+			// LE ENVIO EL ID DEL GDT Y EL PATH
+			enviarHeader(socketDam,dtb->pathScript,SAFA_ID_GDT_DEL_CPU);
+			enviarMensaje(socketDam, dtb->pathScript);
+			enviarHeader(socketDam, "", dtb->idGdt);
 			// LE DIGO AL SAFA QUE ME BLOQUEE
-			enviarHeader(socketSAFA, SAFA_BLOQUEAR_CPU);
+			enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
 			enviarDtb(socketSAFA, dtb);
-			free(dtb);
-			// ESPERO A Q ME ENVIEN UN NUEVO GDT
-			recibirMensajes();
+			puts("DTB enviado...");
 		}else {
 			// EJECUTO NORMAL
 			puts(" DTB Normal");
+
+			// TEST PARA QUE SE MUEVAN LAS COSAS EN SAFA
+//			enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
+//			enviarDtb(socketSAFA, dtb);
 		}
+		sleep(1);
+		puts("complete cliclo");
+	}
+	free(dtb);
+	puts("finaliza cpu");
+
 }
 
 void inciarVariables(){
