@@ -57,11 +57,17 @@ enum PROTOCOLO {
 	SAFA_MATAR_CPU = 28,
 	SAFA_ID_GDT_DEL_CPU = 34,
 	SAFA_PC_DEL_CPU = 35,
+	SAFA_PEDIR_RECURSO = 39,
+	SAFA_LIBERAR_RECURSO = 43,
+	SAFA_BLOQUEAR_CPU_RETENCION = 44,
 
 	// MENSAJES FM9 Y MDJ(FILES SYSTEM)
 	DAM_GET_PATH_MDJ = 14,
 	DAM_SEND_PATH_FM9 = 15,
 	DAM_ABRIR = 38,
+	DAM_FLUSH = 45,
+	DAM_CREAR = 46,
+	DAM_BORRAR = 47,
 
 	// MENSAJES DEL FM9
 	FM9_PATH_STORE_OK = 16,
@@ -85,6 +91,9 @@ enum PROTOCOLO {
 
 	RTA_OK = 32,
 	RTA_ERROR = 33,
+	RECURSO_OK = 40,
+	RECURSO_RETENIDO = 41,
+	RECURSO_ERROR = 42,
 	NUEVA_CONEXION = 35,
 	ENVIAR_DTB = 36,
 };
@@ -101,6 +110,7 @@ typedef struct DTB {
 	int programCounter;
 	int flagInicio;
 	int socket;
+	int pathAbierto;
 } __attribute__((packed)) DTB;
 
 typedef struct DTB_aux {
