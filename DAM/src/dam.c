@@ -121,6 +121,34 @@ void recibirYEnviarCPU(void* cpuVoid){
 				enviarHeader(socketSafa,"", header->id);
 				break;
 			}
+			case DAM_CREAR:{
+				char* path = malloc(header->largo);
+				int idDtb, cantLineas;
+				recibirMensaje(cpu->socket, header->largo, &path);
+				// RECIBO EL ID DEL DTB
+				header = recibirHeader(cpu->socket);
+				idDtb = header->id;
+				// LUEGO RECIBO LA CANTIDAD DE LINEAS
+				header = recibirHeader(cpu->socket);
+				cantLineas = header->id;
+				// DEBO ENVIAR AL MDJ LOS DATOS PARA QUE CREE EL ARCHIVO
+				break;
+			}
+			case DAM_BORRAR:{
+				char* path;
+				int idGdt;
+				// RECIBO EL PATH DEL CPU
+				recibirMensaje(cpu->socket, header->largo, &path);
+				// RECIBO EL ID DEL DTB
+				header = recibirHeader(cpu->socket);
+				idGdt = header->id;
+				// DEBO ENVIAR AL MDJ LOS DATOS PARA QUE BORRE EL ARCHIVO
+				break;
+			}
+			case DAM_FLUSH:{
+
+				break;
+			}
 		}
 	}
 	free(header);
