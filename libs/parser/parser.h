@@ -19,8 +19,8 @@
 #include <readline/chardefs.h>
 #include <string.h>
 #include <stdbool.h>
-#include <generales/generales.h>
 #include <sockets1/sockets.h>
+
 
 const char* ABRIR = "abrir";
 const char* CONCENTRAR = "concentrar";

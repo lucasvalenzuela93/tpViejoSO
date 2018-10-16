@@ -16,5 +16,6 @@ SUBDIRS := \
 commons \
 commons/collections \
 generales \
+parser \
 sockets1 \
 

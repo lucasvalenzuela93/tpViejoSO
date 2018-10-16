@@ -53,6 +53,23 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.so.debug.260771921.1418081850" name="/" resourcePath="parser">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.so.debug.1205332294" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.so.debug" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1466240620" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.183968116"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.1578489471" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.1886809158"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.so.debug.1108589748" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.so.debug.932537053">
+								<option id="gnu.c.compiler.option.include.paths.343347227" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.912134890" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.so.debug.863462125" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.so.debug.1146095913"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.so.debug.894546633" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.so.debug.2006703031"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.so.debug.1346854968" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.so.debug.1904949747">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1851068560" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
@@ -125,5 +142,12 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/libs"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/libs"/>
+		</configuration>
+	</storageModule>
 </cproject>
