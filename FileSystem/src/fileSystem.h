@@ -11,7 +11,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sockets1/sockets.h>
+#include <commons/log.h>
 #include <commons/config.h>
+#include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <readline/chardefs.h>
 
 
 const char* IP_ESCUCHA = "127.0.0.1";
@@ -24,6 +29,10 @@ int socketEscucha, socketDam;
 
 void inciarVariables();
 void finalizarVariables();
+
+//Funciones de Consola
+void iniciarConsola();
+char *recortarLinea(char *);
 
 
 #endif /* SRC_FILESYSTEM_H_ */
