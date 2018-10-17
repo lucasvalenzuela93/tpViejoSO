@@ -16,6 +16,7 @@
 
 const char* IP = "127.0.0.1";
 const int PUERTO_ESCUCHA = 8101;
+const int MAX_LINEA = 128; //Sólo para pruebas. Luego este parámetro se pasará desde archivo config
 
 typedef struct CPU_struct {
 	int id;
