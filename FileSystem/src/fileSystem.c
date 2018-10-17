@@ -32,7 +32,7 @@ int main(void) {
 
 	iniciarVariables();
 
-	crearArchivo("Arqueros.bin",5);
+//	crearArchivo("Arqueros.bin",5);
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
@@ -88,21 +88,40 @@ void iniciarVariables(){
 	tamBloque = config_get_int_value(configMetadata,"TAMANIO_BLOQUES");
 	cantBloques = config_get_int_value(configMetadata, "CANTIDAD_BLOQUES");
 	magicNumber[strlen(magicNumber) + 1] = '\0';
+	actualizarBitmap();
 
-	bitmap = list_create();
-	// RECORRO EL BITMAP PARA VER QUE BLOQUES ESTAN OCUPADOS
-	int estado;
-	char* path;
-	for(int i = 0; i < cantBloques; i++){
-		int bloque = list_get(bitmap,i);
-		path = malloc(contarDigitos(bloque) + strlen(".bin") + strlen("Bloques/"));
-		sprintf(path, "Bloques/%d.bin",i);
-		if(validarArchivo(convertirPath(path)) == ARCHIVO_EXISTENTE) estado = 1;
-			else estado = 0;
-		list_add_in_index(bitmap, i, (void*) estado);
-		free(path);
-	}
 	puts("Variables inicadas...");
+}
+
+void actualizarBitmap(){
+	bitmap = list_create();
+		// RECORRO EL BITMAP PARA VER QUE BLOQUES ESTAN OCUPADOS
+		int estado;
+		char* path, *pathBitmap;
+		int bitmapString[cantBloques];
+		pathBitmap = malloc(strlen("Metadata/Bitmap.bin") + strlen(puntoMontaje) + 1);
+		sprintf(pathBitmap, ".%sMetadata/Bitmap.bin", puntoMontaje);
+		FILE* bitmapFile = fopen(pathBitmap, "w+b");
+		if(bitmapFile == NULL){
+			free(pathBitmap);
+			log_error(logger, "Error al leer Bitmap");
+			exit(1);
+		}
+		char *bit = malloc(sizeof(int));
+		for(int i = 0; i < cantBloques; i++){
+			int bloque = list_get(bitmap,i);
+			path = malloc(contarDigitos(bloque) + strlen(".bin") + strlen("Bloques/"));
+			sprintf(path, "Bloques/%d.bin",i);
+			if(validarArchivo(convertirPath(path)) == ARCHIVO_EXISTENTE) estado = 1;
+				else estado = 0;
+			list_add_in_index(bitmap, i, (void*) estado);
+			sprintf(bit,"%d", estado);
+			fwrite(bit,1,strlen(bit), bitmapFile);
+			free(path);
+		}
+
+		fclose(bitmapFile);
+
 }
 
 void finalizarVariables(){
