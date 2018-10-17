@@ -12,9 +12,7 @@
 
 char* convertirPath(char* path){
 	char* pathAbsoluto = malloc(strlen(path) + strlen(puntoMontaje));
-//	strcpy(pathAbsoluto,".");
-//	strcat(pathAbsoluto, puntoMontaje);
-	if(string_ends_with(path, "/")){
+	if(string_ends_with(path, "/") || string_ends_with(puntoMontaje, "/")){
 		sprintf(pathAbsoluto,".%s%s", puntoMontaje, path);
 	}else {
 		sprintf(pathAbsoluto,".%s/%s", puntoMontaje, path);
@@ -30,9 +28,11 @@ int buscarBitmapLibre(void* bloqueVoid){
 int main(void) {
 	puts("Iniciando File System...");
 	// TEST
-
 	tamanioLinea = 128;
+
 	iniciarVariables();
+
+	crearArchivo("Arqueros.bin",5);
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
@@ -102,9 +102,6 @@ void iniciarVariables(){
 		list_add_in_index(bitmap, i, (void*) estado);
 		free(path);
 	}
-	printf("b1:%d\tb2:%d", list_get(bitmap,0),list_get(bitmap,1));
-	crearArchivo("Arqueros.bin",5);
-
 	puts("Variables inicadas...");
 }
 
@@ -143,12 +140,13 @@ int crearArchivo(char* path, int cantLineas){
 	// SI EL ARCHIVO NO EXISTE LO CREO
 	char* pathFinal = malloc(strlen("Archivos/") +  strlen(path));
 	sprintf(pathFinal, "Archivos/%s", path);
-	if(validarArchivo(convertirPath(pathFinal)) == ARCHIVO_INEXISTENTE){
-		// DEBO CREAR EL ARCHIVO ANTES DE PONER LAS CONFIG
-		int fd2 = open(convertirPath(pathFinal), O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH);
-		close(fd2);
+	configBloque = malloc(sizeof(t_config));
+	configBloque->path = strdup(convertirPath(pathFinal));
+	configBloque->properties = dictionary_create();
+	if(validarArchivo(configBloque->path) == ARCHIVO_EXISTENTE){
+		free(configBloque);
+		return -1;
 	}
-	configBloque = config_create(convertirPath(pathFinal));
 	// LOS CORCHETES Y LAS COMAS PARA EL ARCHIVO DE CONFIG
 	arrayBloques = malloc(cantidadBloques + cantidadBloques + 1);
 	strcpy(arrayBloques,"[");
@@ -170,6 +168,7 @@ int crearArchivo(char* path, int cantLineas){
 					close(fd2);
 				}
 				// AGREGO EL NUMERO DE BLOQUE AL ARRAY DE BLOQUES
+				sprintf(buffer, "%d", i);
 				strcat(arrayBloques, buffer);
 				if(i != cantidadBloques -1){
 					strcat(arrayBloques,",");
@@ -193,7 +192,12 @@ int crearArchivo(char* path, int cantLineas){
 			sprintf(bufferTam,"%d",tamTotal);
 			config_set_value(configBloque, "TAMANIO",bufferTam);
 		}
-		config_save_in_file(configBloque,convertirPath(pathFinal));
+
+		config_save(configBloque);
+		free(pathFinal);
+		free(pathBloque);
+		free(tamanioTotArchivo);
+		free(arrayBloques);
 		return 1;
 	}
 
