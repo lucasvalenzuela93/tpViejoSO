@@ -10,19 +10,332 @@
 
 #include "fileSystem.h"
 
-char* convertirPath(char* path){
-	char* pathAbsoluto = malloc(strlen(path) + strlen(puntoMontaje));
-	if(string_ends_with(path, "/") || string_ends_with(puntoMontaje, "/")){
-		sprintf(pathAbsoluto,".%s%s", puntoMontaje, path);
-	}else {
-		sprintf(pathAbsoluto,".%s/%s", puntoMontaje, path);
-	}
-	return pathAbsoluto;
+void actualizarBitmap() {
+	FILE* bitmap_f = fopen(string_from_format(".%s/Metadata/Bitmap.bin", puntoMontaje), "w");
+	fputs(string_substring(bitmap->bitarray, 0, cantBloques / 8), bitmap_f);
+	fclose(bitmap_f);
 }
 
-int buscarBitmapLibre(void* bloqueVoid){
-	int bloque = (int) bloqueVoid;
-	return bloque != 1;
+int crearBloque() {
+	int i;
+	for (i = 0; i < bitmap->size * 8; i++) {
+		if (bitarray_test_bit(bitmap, i) == 0) {
+			bitarray_set_bit(bitmap, i);
+			FILE* f = fopen(string_from_format(".%s/Bloques/%d.bin", puntoMontaje, i), "w");
+			if (f == NULL)
+				return -1;
+
+			fclose(f);
+			actualizarBitmap();
+			log_debug(logger, "create_block: int=%d", i);
+			return i;
+		}
+	}
+	return -1;
+}
+
+bool agregarBloqueSiHaceFalta(char* path, int offset, int size) {
+	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	t_config* configFile = config_create(pathFile);
+
+	char* bufferArrayBloques = config_get_string_value(configFile, BLOQUES);
+	bufferArrayBloques = string_substring_until(bufferArrayBloques, string_length(bufferArrayBloques) - 1);
+
+	char** arrayBloques = config_get_array_value(configFile, BLOQUES);
+
+	int finalBloque = ceil((double) (offset + size) / (double) tamBloque) - 1;
+
+	int bloquesAsignados = 0;
+	while (arrayBloques[bloquesAsignados] != NULL)
+		bloquesAsignados++;
+
+	while(bloquesAsignados <= finalBloque) {
+		int posNuevoBloque = crearBloque();
+
+		if (posNuevoBloque < 0) {
+			log_debug(logger, "add_blocks_if_needed: bool=%d", false);
+			return false;
+		} else
+			string_append_with_format(&bufferArrayBloques, ",%d", posNuevoBloque);
+
+		bloquesAsignados++;
+	}
+	string_append(&bufferArrayBloques, "]");
+
+	int fileSize = config_get_int_value(configFile, TAMANIO);
+
+	FILE* f = fopen(pathFile, "w");
+	fputs(string_from_format("TAMANIO=%d\n", fileSize), f);
+	fputs(string_from_format("BLOQUES=%s", bufferArrayBloques), f);
+	fclose(f);
+
+	free(pathFile);
+	config_destroy(configFile);
+	free(bufferArrayBloques);
+	int i = 0;
+	while (arrayBloques[i] != NULL)
+		free(arrayBloques[++i]);
+	free(arrayBloques);
+
+	return true;
+}
+
+void escribirBloque(int posicion, int offset, int length, char* buffer) {
+	FILE* bloque = fopen(string_from_format(".%s/Bloques/%d.bin", puntoMontaje, posicion), "r+");
+	fseek(bloque, offset, SEEK_SET);
+	fwrite(buffer, 1, length, bloque);
+	fclose(bloque);
+}
+
+void actualizarTamanioArchivo(char* path, int offset, int size) {
+	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	t_config* configFile = config_create(pathFile);
+
+	char* arrayBloques = config_get_string_value(configFile, BLOQUES);
+	int fileSize = config_get_int_value(configFile, TAMANIO);
+	int diff = fileSize - (offset + size);
+
+	if (diff < 0) {
+		fileSize += abs(diff);
+
+		FILE* f = fopen(pathFile, "w");
+		fputs(string_from_format("TAMANIO=%d\n", fileSize), f);
+		fputs(string_from_format("BLOQUES=%s", arrayBloques), f);
+		fclose(f);
+	}
+}
+
+bool guardarDatos(char* path, int offset, int size, char* buffer) {
+	int tamInicial = size;
+	if (!agregarBloqueSiHaceFalta(path, offset, size)) {
+		log_debug(logger, "save_data: bool=%d", false);
+		return false;
+	}
+
+	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	t_config* configFile = config_create(pathFile);
+
+	char** arrayBloques = config_get_array_value(configFile, BLOQUES);
+
+	int bloqueInicio = offset / tamBloque;
+	int end_block = (offset + size) / tamBloque;
+
+	int offset2 = offset - bloqueInicio * tamBloque;
+	int len = (size > tamBloque) ? tamBloque : size;
+	len -= offset2;
+	escribirBloque(atoi(arrayBloques[bloqueInicio]), offset2, len, string_substring_until(buffer, len));
+	free(arrayBloques[bloqueInicio]); //TODO si aca hago siempre free nunca me va a caer en el while de abajo ?
+	bloqueInicio++;
+	size -= len;
+
+	int escrito = len;
+	while (bloqueInicio <= end_block && arrayBloques[bloqueInicio] != NULL) {
+		int b_len = (size > tamBloque) ? tamBloque : size;
+
+		escribirBloque(atoi(arrayBloques[bloqueInicio]), 0, b_len, string_substring(buffer, escrito, b_len));
+		bloqueInicio++;
+		size -= b_len;
+		escrito += b_len;
+		free(arrayBloques[bloqueInicio]);
+	}
+
+	free(arrayBloques);
+	config_destroy(configFile);
+	free(pathFile);
+
+	actualizarTamanioArchivo(path, offset, tamInicial);
+
+	log_debug(logger, "save_data: bool=%d", true);
+	return true;
+}
+
+char* obtenerDatosDelBloque(int pos) {
+	FILE* archivoBloque = fopen(string_from_format(".%s/Bloques/%d.bin", puntoMontaje, pos), "r");
+
+	int size;
+	char* buffer;
+	fseek(archivoBloque, 0L, SEEK_END);
+	size = ftell(archivoBloque);
+	fseek(archivoBloque, 0L, SEEK_SET);
+
+	buffer = malloc(size);
+	fread(buffer, size, 1, archivoBloque);
+	buffer = string_substring_until(buffer, size);
+
+	fclose(archivoBloque);
+
+	return buffer;
+}
+
+char* obtenerDatos(char* path, int offset, int size) {
+	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	t_config* configFile = config_create(pathFile);
+
+	int bloqueInicio = offset / tamBloque;
+	int bloqueFin = (offset + size) / tamBloque;
+
+	if (config_get_int_value(configFile, TAMANIO) < offset + size) {
+		free(pathFile);
+		config_destroy(configFile);
+
+		return "";
+	}
+
+	char** blocks_arr = config_get_array_value(configFile, BLOQUES);
+
+	char* buffer = string_new();
+	while (bloqueInicio <= bloqueFin && blocks_arr[bloqueInicio] != NULL) {
+		int block_pos = atoi(blocks_arr[bloqueInicio]);
+		char* block_buffer = obtenerDatosDelBloque(block_pos);
+		int block_size = string_length(block_buffer);
+
+		int len = (size - block_size < 0) ? size : block_size;
+		char* block_result = string_substring_until(block_buffer, len);
+
+		string_append(&buffer, block_result);
+
+		free(block_buffer);
+		free(block_result);
+		free(blocks_arr[bloqueInicio]);
+
+		bloqueInicio++;
+		size -= len;
+	}
+
+	free(blocks_arr);
+	config_destroy(configFile);
+	return buffer;
+}
+
+bool validarArchivo(char* path) {
+	struct stat sb;
+	if(stat(path, &sb) == -1){
+		return false;
+	}
+	return true;
+}
+
+void liberarBloques(char** arrayBloques) {
+	int i = 0;
+	while (arrayBloques[i] != NULL) {
+		int bit_pos = atoi(arrayBloques[i]);
+		bitarray_clean_bit(bitmap, bit_pos);
+		i++;
+	}
+
+	actualizarBitmap();
+}
+
+bool borrarArchivo(char* path) {
+	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	if (validarArchivo(path)) {
+		t_config* configFile = config_create(pathFile);
+		char** blocks_arr = config_get_array_value(configFile, BLOQUES);
+		config_destroy(configFile);
+
+		liberarBloques(blocks_arr);
+		remove(pathFile);
+		return true;
+	}
+	return false;
+}
+
+bool crearArchivo(char* path, int cantLineas) {
+	char* arrayBloques = string_new();
+	int posBloque;
+	int tamTotal = cantLineas * tamanioLinea;
+	int bloquesNecesarios = tamTotal / tamBloque;
+	if(tamTotal && tamBloque > 0){
+		bloquesNecesarios ++;
+	}
+	for(int i = 0; i < bloquesNecesarios; i++){
+		posBloque = crearBloque();
+		if(posBloque < 0) return false;
+		string_append(&arrayBloques, string_from_format("%d",posBloque));
+		if(i != bloquesNecesarios - 1){
+			string_append(&arrayBloques, ",");
+		}
+	}
+	FILE *file = fopen(string_from_format(".%s/Archivos/%s", puntoMontaje, path), "w");
+	fputs(string_from_format("TAMANIO=%d\n", tamTotal), file);
+	char* bloq = string_from_format("BLOQUES=[%s]", arrayBloques);
+	fputs(bloq, file);
+	fclose(file);
+
+	return true;
+}
+
+void iniciarBitmap() {
+	FILE* bitmapF = fopen(string_from_format(".%s/Metadata/Bitmap.bin", puntoMontaje), "r");
+	if(bitmapF == NULL){
+		log_debug(logger, "Archivo Bitmap.bin inexistente");
+		bitmapF = fopen(string_from_format(".%s/Metadata/Bitmap.bin", puntoMontaje), "w+");
+	}
+	int size;
+	char* buffer;
+	fseek(bitmapF, 0L, SEEK_END);
+	size = ftell(bitmapF);
+	fseek(bitmapF, 0L, SEEK_SET);
+
+	buffer = malloc(size);
+	fread(buffer, size, 1, bitmapF);
+	buffer = string_substring_until(buffer, size);
+
+	//string_append(&buffer, string_repeat('\0', block_quantity / 8 - size));
+	bitmap = bitarray_create(buffer, cantBloques / 8);
+
+	//free(buffer);
+	fclose(bitmapF);
+}
+
+void iniciarMetadata() {
+	t_config* config_meta = config_create(string_from_format(".%s/Metadata/Metadata.bin", puntoMontaje));
+	if(config_meta == NULL){
+		log_debug(logger, "Error al abrir Metadata");
+		exit(1);
+	}
+	tamBloque = config_get_int_value(config_meta, TAMANIO_BLOQUES);
+	cantBloques = config_get_int_value(config_meta, CANTIDAD_BLOQUES);
+	magicNumber = config_get_string_value(config_meta, MAGIC_NUMBER);
+
+	config_destroy(config_meta);
+}
+
+void iniciarVariables(){
+	config = config_create("./config/config.txt");
+	logger = log_create("log.txt","FILE_SYSTEM",true, LOG_LEVEL_INFO);
+	if(config == NULL){
+		puts("Error al levantar configuraciones...");
+		exit(1);
+	}
+
+	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
+	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
+	puntoMontaje = config_get_string_value(config, "PUNTO_MONTAJE");
+	retardo = config_get_int_value(config, "RETARDO");
+
+	puts("Variables inicadas...");
+}
+
+void iniciarFileSystem() {
+	iniciarVariables();
+	iniciarMetadata();
+	iniciarBitmap();
+}
+
+void finalizarVariables(){
+	close(socketEscucha);
+	close(socketDam);
+}
+
+void escucharMensajesDam(){
+	ContentHeader *header = recibirHeader(socketDam);
+	switch(header->id){
+		case DAM_ABRIR:{
+
+			break;
+		}
+	}
 }
 
 int main(void) {
@@ -30,9 +343,9 @@ int main(void) {
 	// TEST
 	tamanioLinea = 128;
 
-	iniciarVariables();
+	iniciarFileSystem();
 
-//	crearArchivo("Arqueros.bin",5);
+	crearArchivo("Jugadores.bin", 6);
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
@@ -60,169 +373,6 @@ int main(void) {
 	puts("Finalizo File System...");
 	return EXIT_SUCCESS;
 }
-
-void iniciarVariables(){
-	config = config_create("./config/config.txt");
-	logger = log_create("log.txt","FILE_SYSTEM",true, LOG_LEVEL_INFO);
-	if(config == NULL){
-		puts("Error al levantar configuraciones...");
-		exit(1);
-	}
-
-	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
-	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
-	puntoMontaje = config_get_string_value(config, "PUNTO_MONTAJE");
-	retardo = config_get_int_value(config, "RETARDO");
-
-	// LEVANTO METADATA DE FILE SYSTEM
-	char* pathMetadata = malloc(strlen(puntoMontaje) + strlen("Metadata/metadata.bin") + 1);
-	strcpy(pathMetadata, ".");
-	strcat(pathMetadata, puntoMontaje);
-	strcat(pathMetadata, "Metadata/metadata.bin");
-	t_config *configMetadata = config_create(pathMetadata);
-	if(configMetadata == NULL){
-		log_error(logger, "Error al obtener metadata");
-		exit(1);
-	}
-	magicNumber = config_get_string_value(configMetadata, "MAGIC_NUMBER");
-	tamBloque = config_get_int_value(configMetadata,"TAMANIO_BLOQUES");
-	cantBloques = config_get_int_value(configMetadata, "CANTIDAD_BLOQUES");
-	magicNumber[strlen(magicNumber) + 1] = '\0';
-	actualizarBitmap();
-
-	puts("Variables inicadas...");
-}
-
-void actualizarBitmap(){
-	bitmap = list_create();
-		// RECORRO EL BITMAP PARA VER QUE BLOQUES ESTAN OCUPADOS
-		int estado;
-		char* path, *pathBitmap;
-		int bitmapString[cantBloques];
-		pathBitmap = malloc(strlen("Metadata/Bitmap.bin") + strlen(puntoMontaje) + 1);
-		sprintf(pathBitmap, ".%sMetadata/Bitmap.bin", puntoMontaje);
-		FILE* bitmapFile = fopen(pathBitmap, "w+b");
-		if(bitmapFile == NULL){
-			free(pathBitmap);
-			log_error(logger, "Error al leer Bitmap");
-			exit(1);
-		}
-		char *bit = malloc(sizeof(int));
-		for(int i = 0; i < cantBloques; i++){
-			int bloque = list_get(bitmap,i);
-			path = malloc(contarDigitos(bloque) + strlen(".bin") + strlen("Bloques/"));
-			sprintf(path, "Bloques/%d.bin",i);
-			if(validarArchivo(convertirPath(path)) == ARCHIVO_EXISTENTE) estado = 1;
-				else estado = 0;
-			list_add_in_index(bitmap, i, (void*) estado);
-			sprintf(bit,"%d", estado);
-			fwrite(bit,1,strlen(bit), bitmapFile);
-			free(path);
-		}
-
-		fclose(bitmapFile);
-
-}
-
-void finalizarVariables(){
-	close(socketEscucha);
-	close(socketDam);
-}
-
-void escucharMensajesDam(){
-	ContentHeader *header = recibirHeader(socketDam);
-	switch(header->id){
-		case DAM_ABRIR:{
-
-			break;
-		}
-	}
-}
-
-int validarArchivo(char* path){
-	struct stat sb;
-	if(stat(path, &sb) == -1){
-		return ARCHIVO_INEXISTENTE;
-	}
-
-	return ARCHIVO_EXISTENTE;
-}
-
-int crearArchivo(char* path, int cantLineas){
-	t_config *configBloque;
-	char* arrayBloques, *pathBloque, *tamanioTotArchivo, *buffer;
-	char bufferF[100];
-	int tamTotal = cantLineas * tamanioLinea;
-	// AVERIGUO LA CANTIDAD DE BLOQUES
-	int restoBloques = tamTotal % tamBloque;
-	int cantidadBloques = restoBloques > 0 ? tamTotal/tamBloque + 1 : tamTotal/tamBloque;
-	// SI EL ARCHIVO NO EXISTE LO CREO
-	char* pathFinal = malloc(strlen("Archivos/") +  strlen(path));
-	sprintf(pathFinal, "Archivos/%s", path);
-	configBloque = malloc(sizeof(t_config));
-	configBloque->path = strdup(convertirPath(pathFinal));
-	configBloque->properties = dictionary_create();
-	if(validarArchivo(configBloque->path) == ARCHIVO_EXISTENTE){
-		free(configBloque);
-		return -1;
-	}
-	// LOS CORCHETES Y LAS COMAS PARA EL ARCHIVO DE CONFIG
-	arrayBloques = malloc(cantidadBloques + cantidadBloques + 1);
-	strcpy(arrayBloques,"[");
-	if(configBloque != NULL){
-		// RECORRO EL BITMAP DE BLOQUES PARA SABER CUALES ESTAN ASIGNADOS
-		// Y DARLE LOS PRIMERO X BLOQUES Q REQUIERA EL ARCHIVO
-		int bloquesAsignados = 0;
-		for(int i = 0; i < list_size(bitmap); i++){
-			int bloque = (int) list_get(bitmap,i);
-			// CAMBIO EL VALOR DEL BLOQUE EN EL BITMAP
-			if(bloque != 1){
-				bloquesAsignados ++;
-				list_replace(bitmap, i, (void*) 1);
-				pathBloque = malloc(contarDigitos(i) + strlen(".bin") + strlen("/Bloques/"));
-				sprintf(pathBloque,"Bloques/%d.bin", i);
-				// CREO EL BLOQUE
-				if(validarArchivo(convertirPath(pathBloque)) == ARCHIVO_INEXISTENTE){
-					int fd2 = open(convertirPath(pathBloque), O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH);
-					close(fd2);
-				}
-				// AGREGO EL NUMERO DE BLOQUE AL ARRAY DE BLOQUES
-				sprintf(buffer, "%d", i);
-				strcat(arrayBloques, buffer);
-				if(i != cantidadBloques -1){
-					strcat(arrayBloques,",");
-				}
-
-				if(bloquesAsignados == cantidadBloques){
-					break;
-				}
-			}
-		}
-		strcat(arrayBloques, "]");
-		tamanioTotArchivo = malloc(contarDigitos(tamTotal) + 1);
-		sprintf(bufferF,"%d", tamTotal);
-		tamanioTotArchivo = (char*) bufferF;
-		// GUARDO LOS DATOS DEL ARCHIVO
-		if(!config_has_property(configBloque, "BLOQUES")){
-			config_set_value(configBloque, "BLOQUES", arrayBloques);
-		}
-		if(!config_has_property(configBloque, "TAMANIO")){
-			char* bufferTam = malloc(contarDigitos(tamTotal));
-			sprintf(bufferTam,"%d",tamTotal);
-			config_set_value(configBloque, "TAMANIO",bufferTam);
-		}
-
-		config_save(configBloque);
-		free(pathFinal);
-		free(pathBloque);
-		free(tamanioTotArchivo);
-		free(arrayBloques);
-		return 1;
-	}
-
-	return -1;
-}
-
 
 // -------------------------- FUNCIONES DE CONSOLA----------
 int existeComando(char* comando) {

@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sockets1/sockets.h>
@@ -24,10 +25,29 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <commons/bitarray.h>
+#include <math.h>
+
+
+#define PORT "PORT"
+#define MOUNT_POINT "MOUNT_POINT"
+#define CONFIG_FIELDS_N 2
+
+#define TAMANIO_BLOQUES "TAMANIO_BLOQUES"
+#define CANTIDAD_BLOQUES "CANTIDAD_BLOQUES"
+#define MAGIC_NUMBER "MAGIC_NUMBER"
+
+#define TAMANIO "TAMANIO"
+#define BLOQUES "BLOQUES"
 
 enum RTAS {
-	ARCHIVO_EXISTENTE = 1,
-	ARCHIVO_INEXISTENTE = 2
+	ARCHIVO_INEXISTENTE,
+	ARCHIVO_EXISTENTE
+};
+
+enum TIPO_BITMAP {
+	LIBRE,
+	OCUPADO
 };
 
 typedef struct COMANDO {
@@ -55,14 +75,15 @@ int puertoEscucha;
 int socketEscucha, socketDam;
 int done = 0;
 int tamanioLinea;
-t_list *bitmap;
+t_bitarray *bitmap;
 
-void leerBitmapBloques();
-void iniciarVariables();
-void finalizarVariables();
-void escucharMensajesDam();
-int validarArchivo(char*);
-int crearArchivo(char*, int);
+
+
+bool create_file(char* path);
+bool delete_file(char* path);
+bool validate_file(char* path);
+char* get_data(char* path, int offset, int size);
+bool save_data(char* path, int offset, int size, char* buffer);
 
 // ------------------FUNCIONES CONSOLA--------------------
 void iniciarConsola(); 									// Ejecuta la consola.
