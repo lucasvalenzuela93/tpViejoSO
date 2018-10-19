@@ -282,7 +282,7 @@ void iniciarBitmap() {
 	buffer = string_substring_until(buffer, size);
 
 	//string_append(&buffer, string_repeat('\0', block_quantity / 8 - size));
-	bitmap = bitarray_create(buffer, cantBloques / 8);
+	bitmap = bitarray_create_with_mode(buffer, cantBloques / 8, LSB_FIRST);
 
 	//free(buffer);
 	fclose(bitmapF);
@@ -345,15 +345,15 @@ int main(void) {
 
 	iniciarFileSystem();
 
-	crearArchivo("Jugadores.bin", 6);
+//	crearArchivo("Jugadores.bin", 6);
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
 	socketDam = servidorConectarComponente(socketEscucha, "FILE_SYSTEM", "DAM");
 
 	// ESPERO QUE EL DAM ME DIGA EL TAMAÑO DE CADA LINEA
-	ContentHeader *header = recibirHeader(socketDam);
-	tamanioLinea = header->id;
+//	ContentHeader *header = recibirHeader(socketDam);
+//	tamanioLinea = header->id;
 
 
 	// CREO EL HILO DE ESCUCHA DE MENSAJES
