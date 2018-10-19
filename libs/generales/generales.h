@@ -13,5 +13,6 @@ typedef struct {
 	int rafaga;
 } __attribute__((packed))InfoCpu;
 
+int contarDigitos(int);
 
 #endif /* GENERALES_GENERALES_H_ */
