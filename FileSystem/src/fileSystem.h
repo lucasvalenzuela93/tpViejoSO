@@ -79,11 +79,11 @@ t_bitarray *bitmap;
 
 
 
-bool create_file(char* path);
-bool delete_file(char* path);
-bool validate_file(char* path);
-char* get_data(char* path, int offset, int size);
-bool save_data(char* path, int offset, int size, char* buffer);
+bool crearArchivo(char* , int);
+bool borrarArchivo(char*);
+bool validarArchivo(char* path);
+char* obtenerDatos(char* path, int offset, int size);
+bool guardarDatos(char* path, int offset, int size, char* buffer);
 
 // ------------------FUNCIONES CONSOLA--------------------
 void iniciarConsola(); 									// Ejecuta la consola.
