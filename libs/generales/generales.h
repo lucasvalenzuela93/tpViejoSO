@@ -18,6 +18,6 @@ int contarDigitos(int);
 //// ECLIPSE
 //#define PATH_CONFIG "./config/config.txt"
 // CONSOLA
-#define PATH_CONFIG "../config/config.txt"
+#define PATH_CONFIG "./config/config.txt"
 
 #endif /* GENERALES_GENERALES_H_ */

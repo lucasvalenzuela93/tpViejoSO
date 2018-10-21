@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
+#include <commons/string.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <readline/chardefs.h>
@@ -22,15 +23,7 @@
 #include <sockets1/sockets.h>
 
 
-const char* ABRIR = "abrir";
-const char* CONCENTRAR = "concentrar";
-const char* ASIGNAR = "asignar";
-const char* WAIT = "wait";
-const char* SIGNAL = "signal";
-const char* FLUSH = "flish";
-const char* CLOSE = "close";
-const char* CREAR = "crear";
-const char* BORRAR = "borrar";
+
 
 typedef struct {
 	int socketSafa;

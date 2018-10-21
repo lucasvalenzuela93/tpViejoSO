@@ -11,7 +11,7 @@
 #include "fileSystem.h"
 
 void actualizarBitmap() {
-	FILE* bitmap_f = fopen(string_from_format(".%s/Metadata/Bitmap.bin", puntoMontaje), "w");
+	FILE* bitmap_f = fopen(string_from_format("%s/Metadata/Bitmap.bin", puntoMontaje), "w");
 	fputs(string_substring(bitmap->bitarray, 0, cantBloques / 8), bitmap_f);
 	fclose(bitmap_f);
 }
@@ -21,7 +21,7 @@ int crearBloque() {
 	for (i = 0; i < bitmap->size * 8; i++) {
 		if (bitarray_test_bit(bitmap, i) == 0) {
 			bitarray_set_bit(bitmap, i);
-			FILE* f = fopen(string_from_format(".%s/Bloques/%d.bin", puntoMontaje, i), "w");
+			FILE* f = fopen(string_from_format("%s/Bloques/%d.bin", puntoMontaje, i), "w");
 			if (f == NULL)
 				return -1;
 
@@ -35,7 +35,7 @@ int crearBloque() {
 }
 
 bool agregarBloqueSiHaceFalta(char* path, int offset, int size) {
-	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	char* pathFile = string_from_format("%s/Archivos/%s", puntoMontaje, path);
 	t_config* configFile = config_create(pathFile);
 
 	char* bufferArrayBloques = config_get_string_value(configFile, BLOQUES);
@@ -81,14 +81,14 @@ bool agregarBloqueSiHaceFalta(char* path, int offset, int size) {
 }
 
 void escribirBloque(int posicion, int offset, int length, char* buffer) {
-	FILE* bloque = fopen(string_from_format(".%s/Bloques/%d.bin", puntoMontaje, posicion), "r+");
+	FILE* bloque = fopen(string_from_format("%s/Bloques/%d.bin", puntoMontaje, posicion), "r+");
 	fseek(bloque, offset, SEEK_SET);
 	fwrite(buffer, 1, length, bloque);
 	fclose(bloque);
 }
 
 void actualizarTamanioArchivo(char* path, int offset, int size) {
-	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	char* pathFile = string_from_format("%s/Archivos/%s", puntoMontaje, path);
 	t_config* configFile = config_create(pathFile);
 
 	char* arrayBloques = config_get_string_value(configFile, BLOQUES);
@@ -112,7 +112,7 @@ bool guardarDatos(char* path, int offset, int size, char* buffer) {
 		return false;
 	}
 
-	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	char* pathFile = string_from_format("%s/Archivos/%s", puntoMontaje, path);
 	t_config* configFile = config_create(pathFile);
 
 	char** arrayBloques = config_get_array_value(configFile, BLOQUES);
@@ -150,7 +150,7 @@ bool guardarDatos(char* path, int offset, int size, char* buffer) {
 }
 
 char* obtenerDatosDelBloque(int pos) {
-	FILE* archivoBloque = fopen(string_from_format(".%s/Bloques/%d.bin", puntoMontaje, pos), "r");
+	FILE* archivoBloque = fopen(string_from_format("%s/Bloques/%d.bin", puntoMontaje, pos), "r");
 
 	int size;
 	char* buffer;
@@ -168,7 +168,7 @@ char* obtenerDatosDelBloque(int pos) {
 }
 
 char* obtenerDatos(char* path, int offset, int size) {
-	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
+	char* pathFile = string_from_format("%s/Archivos/%s", puntoMontaje, path);
 	t_config* configFile = config_create(pathFile);
 
 	int bloqueInicio = offset / tamBloque;
@@ -227,8 +227,8 @@ void liberarBloques(char** arrayBloques) {
 }
 
 bool borrarArchivo(char* path) {
-	char* pathFile = string_from_format(".%s/Archivos/%s", puntoMontaje, path);
-	if (validarArchivo(path)) {
+	char* pathFile = string_from_format("%s/Archivos/%s", puntoMontaje, path);
+	if (validarArchivo(pathFile)) {
 		t_config* configFile = config_create(pathFile);
 		char** blocks_arr = config_get_array_value(configFile, BLOQUES);
 		config_destroy(configFile);
@@ -248,6 +248,10 @@ bool crearArchivo(char* path, int cantLineas) {
 	if(tamTotal && tamBloque > 0){
 		bloquesNecesarios ++;
 	}
+	if(validarArchivo(string_from_format("%s/Archivos/%s", puntoMontaje, path))){
+		printf("Archivo %s ya existente\n", path);
+		return false;
+	}
 	for(int i = 0; i < bloquesNecesarios; i++){
 		posBloque = crearBloque();
 		if(posBloque < 0) return false;
@@ -257,7 +261,7 @@ bool crearArchivo(char* path, int cantLineas) {
 		}
 	}
 	char **pathSplit = string_split(path, "/");
-	char *pathF = string_from_format(".%s/Archivos/", puntoMontaje);
+	char *pathF = string_from_format("%s/Archivos/", puntoMontaje);
 	int i = 0;
 	while(pathSplit[i] != NULL){
 		char* split = pathSplit[i];
@@ -275,7 +279,7 @@ bool crearArchivo(char* path, int cantLineas) {
 			}
 		}
 	}
-	FILE *file = fopen(string_from_format(".%s/Archivos/%s", puntoMontaje, path), "w");
+	FILE *file = fopen(string_from_format("%s/Archivos/%s", puntoMontaje, path), "w");
 	if(file == NULL){
 		puts("Error al crear el archivo");
 		return false;
@@ -288,10 +292,10 @@ bool crearArchivo(char* path, int cantLineas) {
 }
 
 void iniciarBitmap() {
-	FILE* bitmapF = fopen(string_from_format(".%s/Metadata/Bitmap.bin", puntoMontaje), "r");
+	FILE* bitmapF = fopen(string_from_format("%s/Metadata/Bitmap.bin", puntoMontaje), "r");
 	if(bitmapF == NULL){
 		log_debug(logger, "Archivo Bitmap.bin inexistente");
-		bitmapF = fopen(string_from_format(".%s/Metadata/Bitmap.bin", puntoMontaje), "w+");
+		bitmapF = fopen(string_from_format("%s/Metadata/Bitmap.bin", puntoMontaje), "w+");
 	}
 	int size;
 	char* buffer;
@@ -311,7 +315,7 @@ void iniciarBitmap() {
 }
 
 void iniciarMetadata() {
-	t_config* config_meta = config_create(string_from_format(".%s/Metadata/Metadata.bin", puntoMontaje));
+	t_config* config_meta = config_create(string_from_format("%s/Metadata/Metadata.bin", puntoMontaje));
 	if(config_meta == NULL){
 		log_debug(logger, "Error al abrir Metadata");
 		exit(1);
@@ -324,7 +328,7 @@ void iniciarMetadata() {
 }
 
 void iniciarVariables(){
-	config = config_create("./config/config.txt");
+	config = config_create(PATH_CONFIG);
 	logger = log_create("log.txt","FILE_SYSTEM",true, LOG_LEVEL_INFO);
 	if(config == NULL){
 		puts("Error al levantar configuraciones...");
@@ -352,35 +356,56 @@ void finalizarVariables(){
 
 void escucharMensajesDam(){
 	puts("Escuchando mensajes del DAM");
-	ContentHeader *header = recibirHeader(socketDam);
-	switch(header->id){
-		case DAM_CREAR:{
-			puts("Dam crear");
-			int numLineas, id;
-			// RECIBO ID DTB
-			free(header);
-			ContentHeader *headerId = recibirHeader(socketDam);
-			id = headerId->id;
-			printf("Id dtb: %d\n", id);
-			// RECIBO EL NUMEOR DE LINEAS
-			free(header);
-			ContentHeader *headerPath = recibirHeader(socketDam);
-			numLineas = headerPath->id;
-			printf("Cantidad de lineas: %d\n", numLineas);
-			char* path = malloc(headerPath->largo -1);
-			printf("Tam header: %d", headerPath->largo);
-			// RECIBO EL PATH
-			recibirMensaje(socketDam, headerPath->largo, &path);
-			printf("Path: %s\n", path);
-			free(header);
-			puts("llega");
-			if(!crearArchivo(path, numLineas)){
-				puts("Error al crear el archivo");
+	ContentHeader *header;
+	while(true){
+		header = recibirHeader(socketDam);
+		switch(header->id){
+			case DAM_CREAR:{
+				int numLineas, id;
+				// RECIBO ID DTB
+				free(header);
+				header = recibirHeader(socketDam);
+				id = header->id;
+				// RECIBO EL NUMEOR DE LINEAS
+				free(header);
+				header = recibirHeader(socketDam);
+				numLineas = header->id;
+				char* path = malloc(header->largo -1);
+				// RECIBO EL PATH
+				recibirMensaje(socketDam, header->largo, &path);
+				free(header);
+				if(!crearArchivo(path, numLineas)){
+					puts("Error al crear el archivo");
+					break;
+				}
+				enviarHeader(socketDam, "",MDJ_CREACION_ARCHIVO_OK);
+				enviarHeader(socketDam,"", id);
+				printf("Archivo: %s - CREADO\n\n", path);
+				free(path);
+				break;
 			}
-			puts("Archivo creado...");
-			break;
+			case DAM_BORRAR:{
+				puts("Dam borrar");
+				char* path;
+				int idDtb;
+				// RECIBO EL ID DEL DTB
+				header = recibirHeader(socketDam);
+				idDtb = header->id;
+				// RECIBO EL PATH
+				recibirMensaje(socketDam, header->largo, &path);
+				if(borrarArchivo(path)){
+					// EXISTE EL ARCHIVO
+					puts("Archivo borrado");
+					enviarHeader(socketDam, "", MDJ_BORRAR_OK);
+					enviarHeader(socketDam, "", idDtb);
+					break;
+				}
+				puts("No existe el archivo");
+				break;
+			}
 		}
 	}
+	free(header);
 }
 
 int main(void) {
@@ -390,7 +415,16 @@ int main(void) {
 
 	iniciarFileSystem();
 
-//	crearArchivo("equipo/Jugadores.bin", 6);
+	// ------TEST------
+//	crearArchivo("equipos/River.txt", 6);
+//
+//	sleep(2);
+//
+//	if(borrarArchivo("equipos/River.txt")){
+//		puts("Archivo Borrado");
+//	}else{
+//		puts("Error al borrar archivo");
+//	}
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 

@@ -41,11 +41,6 @@
 #define BLOQUES "BLOQUES"
 
 
-enum TIPO_BITMAP {
-	LIBRE,
-	OCUPADO
-};
-
 typedef struct COMANDO {
 	char* cmd;
 	int (*funcion)();

@@ -15,6 +15,7 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
+#include <generales/generales.h>
 
 typedef struct CPU_struct {
 	int id;

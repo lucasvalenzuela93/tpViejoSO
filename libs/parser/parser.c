@@ -86,9 +86,10 @@ int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
 	enviarMensaje(socketDam,path);
 	// ENVIO EL ID DEL DTB Y LUEGO LA CANTIDAD DE LINEAS
 	enviarHeader(socketDam,"", dtb->idGdt);
-	enviarHeader(socketDam,"",atoi(cantLineas));
+	int lineas = atoi(cantLineas);
+	enviarHeader(socketDam,"",lineas);
 	// BLOQUEO AL DTB
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU_RETENCION);
+	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
 	enviarDtb(socketSafa, dtb);
 	return CREAR_OK;
 }
@@ -96,55 +97,58 @@ int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
 int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
 	// LE AVISO AL DAM QUE REENVIE UN MENSAJE DE BORRAR
 	enviarHeader(socketDam, path, DAM_BORRAR);
-	enviarMensaje(socketDam, path);
+
 	// LUEGO DEL PATH LE PASO EL ID DEL DTB
-	enviarHeader(socketDam, "", dtb->idGdt);
+	enviarHeader(socketDam, path, dtb->idGdt);
+	// ENVIO EL MENSAJE
+	enviarMensaje(socketDam, path);
 	// UNA VEZ ENVIADO TODOS LOS DATOS LE DIGO AL DAM QUE BLOQUEE EL DTB
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU_RETENCION);
+	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
 	enviarDtb(socketSafa, dtb);
 	return BORRAR_OK;
 
 }
 
 int parsearLinea(char* linea, parserSockets *sockets, DTB* dtb){
-	if(!string_starts_with(linea,"#")  || !string_starts_with(linea, '\n')){
-		// CORROBORO QUE TERMINE CON UN '\n'
-		if(linea[strlen(linea)] == '\n'){
-			char** split = string_split(linea, " ");
-			char* operacion = split[0];
-			char* arg1 = split[1],
-					arg2 = split[2],
-					arg3 = split[3];
-			// PATH ABIERTO = 0 -> EL PATH ESTA CERRADO
-			// PATH ABIERTO = 1 -> EL PATH ESTA ABIERTO
-			if(strcmp(operacion, ABRIR) == 0){
-				return abrir(sockets->socketDam, arg1, dtb);
-			}
-			if(strcmp(operacion, CONCENTRAR) == 0){
-				return abrir(sockets->socketDam, arg1, dtb);
-			}
-			if(strcmp(operacion, ASIGNAR) == 0){
-				return asignar(sockets->socketFm9,split,dtb);
-			}
-			if(strcmp(operacion, WAIT) == 0){
-				return wait(sockets->socketSafa, arg1, dtb);
-			}
-			if(strcmp(operacion, SIGNAL) == 0){
-				return signal(sockets->socketSafa, arg1,dtb);
-			}
-			if(strcmp(operacion, FLUSH) == 0){
-				return flush(sockets->socketDam, sockets->socketSafa, arg1, dtb);
-			}
-			if(strcmp(operacion, CLOSE) == 0){
-				return closeOp(sockets->socketFm9, arg1, dtb);
-			}
-			if(strcmp(operacion, CREAR) == 0){
-				return crear(sockets->socketDam, sockets->socketSafa, arg1, arg2, dtb);
-			}
-			if(strcmp(operacion, BORRAR) == 0){
-				return borrar(sockets->socketDam, sockets->socketSafa, arg1, dtb);
-			}
-
+	if(!string_starts_with(linea,"#")){
+		char** split = string_split(linea, " ");
+		char* operacion = split[0];
+//		char* arg1 = split[1],
+//				arg2 = split[2],
+//				arg3 = split[3];
+		// PATH ABIERTO = 0 -> EL PATH ESTA CERRADO
+		// PATH ABIERTO = 1 -> EL PATH ESTA ABIERTO
+		if(strcmp(operacion, "abrir") == 0){
+			return abrir(sockets->socketDam, split[1], dtb);
+		}
+		if(strcmp(operacion, "concentrar") == 0){
+			return concentrar();
+		}
+		if(strcmp(operacion, "asignar") == 0){
+			return asignar(sockets->socketFm9,split,dtb);
+		}
+		if(strcmp(operacion, "wait") == 0){
+			return wait(sockets->socketSafa, split[1], dtb);
+		}
+		if(strcmp(operacion, "signal") == 0){
+			return signal(sockets->socketSafa, split[1],dtb);
+		}
+		if(strcmp(operacion, "flush") == 0){
+			return flush(sockets->socketDam, sockets->socketSafa, split[1], dtb);
+		}
+		if(strcmp(operacion, "close") == 0){
+			return closeOp(sockets->socketFm9, split[1], dtb);
+		}
+		if(strcmp(operacion, "crear") == 0){
+			char* lineas = split[2];
+			char* path = split[1];
+			path[strlen(split[1])] = '\0';
+			return crear(sockets->socketDam, sockets->socketSafa, path, lineas, dtb);
+		}
+		if(strcmp(operacion, "borrar") == 0){
+			char* path = split[1];
+			path[strlen(split[1])] = '\0';
+			return borrar(sockets->socketDam, sockets->socketSafa, path, dtb);
 		}
 	}
 }

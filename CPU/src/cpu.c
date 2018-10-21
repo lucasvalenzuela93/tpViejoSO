@@ -37,6 +37,10 @@ int main(void) {
 
 void recibirMensajes(){
 	DTB* dtb;
+	parserSockets *pSockets = malloc(sizeof(parserSockets));
+	pSockets->socketDam = socketDam;
+	pSockets->socketFm9 = socketFunesMemory;
+	pSockets->socketSafa = socketSAFA;
 	while(true){
 		dtb = recibirDtb(socketSAFA);
 		if(dtb->flagInicio == 0){
@@ -55,10 +59,11 @@ void recibirMensajes(){
 		}else {
 			// EJECUTO NORMAL
 			puts(" DTB Normal");
-
-			// TEST PARA QUE SE MUEVAN LAS COSAS EN SAFA
-//			enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
-//			enviarDtb(socketSAFA, dtb);
+			int res = parsearLinea("borrar equipos/River.txt", pSockets, dtb);
+			printf("resultado: %d\n", res);
+//			sleep(3);
+//			res = parsearLinea("borrar equipos/River.txt", pSockets, dtb);
+//			printf("resultado: %d", res);
 		}
 		sleep(1);
 		puts("complete cliclo");
@@ -70,7 +75,7 @@ void recibirMensajes(){
 
 void inciarVariables(){
 	logger = log_create("log.txt", "CPU", true, LOG_LEVEL_INFO);
-	config = config_create("./config/config.txt");
+	config = config_create(PATH_CONFIG);
 	if(config == NULL){
 		puts("Error al leer configuraciones...");
 		finalizarVariables();

@@ -143,37 +143,13 @@ void* manejarMensajes(){
 		// en el mensaje me mandan el Dgt para q lo busque en la lista.
 
 		switch(header->id){
-			case SAFA_BLOQUEAR_CPU:{
-				puts("Bloquear CPU");
-				// debo recibir El id del Gdt y el Program counter del CPU y guardarlo en el dtb.
-				header = recibirHeader(socket_dam);
-				// primero recibo el id del Gdt
-				char* pc,id;
-				if(header->id == SAFA_ID_GDT_DEL_CPU){
-					recibirMensaje(socket_dam, header->largo, &id);
-					dtb->idGdt = atoi(id);
-					dtb = list_remove_by_condition_with_param(colaNew, (void*) id, buscarDTBporIdChar);
-
-					header = recibirHeader(socket_dam);
-					if(header->id == SAFA_PC_DEL_CPU){
-						// recibo el program counter y lo guardo
-						recibirMensaje(socket_dam, header->largo, &pc);
-						dtb->programCounter = atoi(pc);
-						list_add(colaBloqueados, (void*) dtb);
-						// le saco el DTB asignado al cpu
-						CPU_struct* cpu = (CPU_struct*) list_remove_by_condition_with_param(listaCpu, (void*) id,buscarCpuAsignado);
-						cpu->gdtAsignado = -1;
-						list_add(listaCpu, (void*) cpu);
-					}
-				}
-				break;
-			}
 			case SAFA_DESBLOQUEAR_CPU:{
 				// RECIBO EL ID DEL DTB
 				header = recibirHeader(socket_dam);
 
 				// debo pasar el gdt de la lista de bloqueados a la lista de ready
 				DTB* dtb = list_find_with_param(colaBloqueados, (void*) header-> id, buscarDTBporIdInt);
+				printf("Id Dtb a desbloquear: %d\n", header->id);
 				if(dtb){
 						list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporIdInt);
 						if(dtb->flagInicio == 0){
@@ -190,9 +166,12 @@ void* manejarMensajes(){
 								list_add(colaReady,(void*) dtb);
 							}
 						}else {
+							puts("Desbloqueo DTB normal");
 							list_add(colaReady, (void*) dtb);
 						}
 
+				}else{
+					printf("No existe DTB con id: %d en la cola de bloqueados\n", header->id);
 				}
 				break;
 			}
@@ -289,7 +268,6 @@ void* manejarColas(){
 					DTB* dtb = (DTB*) list_remove(colaReady, 0);
 					// le asigno el id del gdt al cpu y lo envio
 					if(dtb->idGdt != -1 && dtb->socket == -1){
-						puts("ejecuto 1");
 						// REMUEVO EL PRIMER ELEMENTO DE LA COLA DE READY UNA VEZ QUE SE
 						// QUE SI ES EL DUMMY ESTA ASIGNADO
 						cpu->gdtAsignado = dtb->idGdt;
@@ -411,6 +389,7 @@ void recibirMensajesCpu(void * cpuVoid){
 						list_remove_by_condition_with_param(colaEjecucion,(void*) aux->idGdt, buscarDTBporIdInt);
 						dtb->socket = -1;
 						list_add(colaBloqueados, (void*) dtb);
+						log_info(logger, "DTB bloqueado -- id: %d", dtb->idGdt);
 						}
 					}
 					// DESALOJO AL CPU DEL GDT

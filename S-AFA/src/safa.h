@@ -26,7 +26,6 @@
 
 
 
-const char* PATH_CONFIG = "./config/config.txt";
 const char* CORRUPTO = "Corrupto";
 const char* OPERATIVO = "Operativo";
 
