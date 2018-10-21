@@ -256,10 +256,32 @@ bool crearArchivo(char* path, int cantLineas) {
 			string_append(&arrayBloques, ",");
 		}
 	}
+	char **pathSplit = string_split(path, "/");
+	char *pathF = string_from_format(".%s/Archivos/", puntoMontaje);
+	int i = 0;
+	while(pathSplit[i] != NULL){
+		char* split = pathSplit[i];
+		if(pathSplit[i + 1] == NULL){
+			break;
+		}
+		string_append(&pathF, string_from_format("%s/", split));
+		i ++;
+	}
+	if(strlen(pathF) > 1){
+		if(!validarArchivo(pathF)){
+
+			if(mkdir(pathF, 0700) && errno != EEXIST){
+				puts("Error al crear el directorio");
+			}
+		}
+	}
 	FILE *file = fopen(string_from_format(".%s/Archivos/%s", puntoMontaje, path), "w");
-	fputs(string_from_format("TAMANIO=%d\n", tamTotal), file);
-	char* bloq = string_from_format("BLOQUES=[%s]", arrayBloques);
-	fputs(bloq, file);
+	if(file == NULL){
+		puts("Error al crear el archivo");
+		return false;
+	}
+	txt_write_in_file(file, string_from_format("BLOQUES=[%s]\n", arrayBloques));
+	txt_write_in_file(file, string_from_format("TAMANIO=%d\n", tamTotal));
 	fclose(file);
 
 	return true;
@@ -329,10 +351,33 @@ void finalizarVariables(){
 }
 
 void escucharMensajesDam(){
+	puts("Escuchando mensajes del DAM");
 	ContentHeader *header = recibirHeader(socketDam);
 	switch(header->id){
-		case DAM_ABRIR:{
-
+		case DAM_CREAR:{
+			puts("Dam crear");
+			int numLineas, id;
+			// RECIBO ID DTB
+			free(header);
+			ContentHeader *headerId = recibirHeader(socketDam);
+			id = headerId->id;
+			printf("Id dtb: %d\n", id);
+			// RECIBO EL NUMEOR DE LINEAS
+			free(header);
+			ContentHeader *headerPath = recibirHeader(socketDam);
+			numLineas = headerPath->id;
+			printf("Cantidad de lineas: %d\n", numLineas);
+			char* path = malloc(headerPath->largo -1);
+			printf("Tam header: %d", headerPath->largo);
+			// RECIBO EL PATH
+			recibirMensaje(socketDam, headerPath->largo, &path);
+			printf("Path: %s\n", path);
+			free(header);
+			puts("llega");
+			if(!crearArchivo(path, numLineas)){
+				puts("Error al crear el archivo");
+			}
+			puts("Archivo creado...");
 			break;
 		}
 	}
@@ -345,7 +390,7 @@ int main(void) {
 
 	iniciarFileSystem();
 
-//	crearArchivo("Jugadores.bin", 6);
+//	crearArchivo("equipo/Jugadores.bin", 6);
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
