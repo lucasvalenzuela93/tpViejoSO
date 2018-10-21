@@ -20,6 +20,7 @@ int main(void) {
 
 	esperarConexiones();
 
+	recibirGDT();
 
 	finalizarVariables();
 	puts("Finalizo Funes Memory...");
@@ -74,6 +75,22 @@ void iniciarVariables(){
 	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
 	listaCpu = list_create();
 }
+
+void recibirGDT(int idGDT){ //recibir y guardar idGDT de DTB desde DAM
+		ContentHeader *header = recibirHeader(socketDam);
+		header = recibirHeader(socketDam);
+		puts("Recibo idGDT de proceso DAM");
+		idGDT = header->id;
+		free(header);
+		guardarGDT(idGDT);
+}
+
+void guardarGDT(int idGDT){
+
+	lista_idGDTs = list_create();
+	list_add(lista_idGDTs, (void*)idGDT);
+}
+
 
 void finalizarVariables(){
 	shutdown(socketEscucha,2);
