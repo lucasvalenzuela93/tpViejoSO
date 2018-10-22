@@ -1,0 +1,3 @@
+crear equipos/SanLorenzo.bin 7
+crear equipos/Boca.bin 11
+borrar equipos/SanLorenzo.bin

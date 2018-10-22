@@ -140,15 +140,15 @@ int parsearLinea(char* linea, parserSockets *sockets, DTB* dtb){
 			return closeOp(sockets->socketFm9, split[1], dtb);
 		}
 		if(strcmp(operacion, "crear") == 0){
-			char* lineas = split[2];
-			char* path = split[1];
-			path[strlen(split[1])] = '\0';
-			return crear(sockets->socketDam, sockets->socketSafa, path, lineas, dtb);
+			if(split[2] == NULL){
+				puts("Error al parsear e split");
+			}
+			char* linea = string_duplicate((char*) split[2]);
+			return crear(sockets->socketDam, sockets->socketSafa, split[1], linea, dtb);
 		}
 		if(strcmp(operacion, "borrar") == 0){
-			char* path = split[1];
-			path[strlen(split[1])] = '\0';
-			return borrar(sockets->socketDam, sockets->socketSafa, path, dtb);
+//			char* path = string_duplicate(split[1]);
+			return borrar(sockets->socketDam, sockets->socketSafa, split[1], dtb);
 		}
 	}
 }

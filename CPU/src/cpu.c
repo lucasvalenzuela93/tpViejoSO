@@ -35,9 +35,46 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
+int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
+	int tamanioLinea = 128;
+	char* pathF = string_from_format("/home/utnso/workspace/tp-2018-2c-keAprobo/FileSystem/montaje/%s",path);
+	FILE *file = fopen(pathF, "r");
+	char* linea = string_new();
+	if(file == NULL){
+		free(linea);
+		return -1;
+	}
+	int i = 0;
+	char c;
+	// TODO: recibir el tamaño de linea del FM9
+	while(i < tamanioLinea){
+		c = (char) fgetc(file);
+
+		if(c == '\n'){
+			if(strlen(linea) == 0){
+				free(linea);
+				return -1;
+			}
+			string_append_with_format(&linea,"%c", '\0');
+			parsearLinea(linea, parser, dtb);
+			linea = string_new();
+
+			sleep(2);
+		}else if(c != EOF){
+			string_append_with_format(&linea,"%c", c);
+		}else{
+			free(linea);
+			return -1;
+		}
+
+	}
+	free(linea);
+	return 1;
+}
+
 void recibirMensajes(){
 	DTB* dtb;
-	parserSockets *pSockets = malloc(sizeof(parserSockets));
+	parserSockets *pSockets = (parserSockets*) malloc(sizeof(parserSockets));
 	pSockets->socketDam = socketDam;
 	pSockets->socketFm9 = socketFunesMemory;
 	pSockets->socketSafa = socketSAFA;
@@ -59,11 +96,17 @@ void recibirMensajes(){
 		}else {
 			// EJECUTO NORMAL
 			puts(" DTB Normal");
-			int res = parsearLinea("borrar equipos/River.txt", pSockets, dtb);
-			printf("resultado: %d\n", res);
-//			sleep(3);
-//			res = parsearLinea("borrar equipos/River.txt", pSockets, dtb);
-//			printf("resultado: %d", res);
+			char* path1 = string_new();
+			path1 = string_duplicate("test.txt");
+			if(parsearArchivo(path1, pSockets, dtb) == -1){
+				// TODO: avisar que termino el archivo al SAFA
+				log_info(logger, "Fin de archivo");
+				free(path1);
+				break;
+			}
+
+			free(path1);
+
 		}
 		sleep(1);
 		puts("complete cliclo");

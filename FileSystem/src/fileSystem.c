@@ -143,7 +143,7 @@ bool guardarDatos(char* path, int offset, int size, char* buffer) {
 	config_destroy(configFile);
 	free(pathFile);
 
-	actualizarTamanioArchivo(path, offset, tamInicial);
+//	actualizarTamanioArchivo(path, offset, tamInicial);
 
 	log_debug(logger, "save_data: bool=%d", true);
 	return true;
@@ -252,9 +252,14 @@ bool crearArchivo(char* path, int cantLineas) {
 		printf("Archivo %s ya existente\n", path);
 		return false;
 	}
+	// TODO: ver si le division esta siempre va a ser entre potencias de dos
+	int bloquesPorLinea = tamanioLinea / tamBloque;
 	for(int i = 0; i < bloquesNecesarios; i++){
 		posBloque = crearBloque();
 		if(posBloque < 0) return false;
+		if(i % bloquesPorLinea - 1 == 0 && i != 0){
+			escribirBloque(i, 0, strlen("hola"), "hola");
+		}
 		string_append(&arrayBloques, string_from_format("%d",posBloque));
 		if(i != bloquesNecesarios - 1){
 			string_append(&arrayBloques, ",");
@@ -382,11 +387,12 @@ void escucharMensajesDam(){
 				enviarHeader(socketDam,"", id);
 				printf("Archivo: %s - CREADO\n\n", path);
 				free(path);
+				free(header);
 				break;
 			}
 			case DAM_BORRAR:{
 				puts("Dam borrar");
-				char* path;
+				char* path = malloc(header->largo);
 				int idDtb;
 				// RECIBO EL ID DEL DTB
 				header = recibirHeader(socketDam);
@@ -400,6 +406,7 @@ void escucharMensajesDam(){
 					enviarHeader(socketDam, "", idDtb);
 					break;
 				}
+				free(header);
 				puts("No existe el archivo");
 				break;
 			}
@@ -416,7 +423,7 @@ int main(void) {
 	iniciarFileSystem();
 
 	// ------TEST------
-//	crearArchivo("equipos/River.txt", 6);
+	crearArchivo("equipos/River.txt", 6);
 //
 //	sleep(2);
 //
