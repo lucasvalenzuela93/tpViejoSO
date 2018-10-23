@@ -22,6 +22,7 @@
 #include <readline/history.h>
 #include <arpa/inet.h>
 #include <commons/collections/list.h>
+#include </home/utnso/workspace/tp-2018-2c-keAprobo/libs/generales/dtb.h>
 
 int MAX_CONEX;
 
@@ -115,22 +116,7 @@ typedef struct {
   int largo;
 } __attribute__((packed)) ContentHeader;
 
-typedef struct DTB {
-	int idGdt;
-	char* pathScript;
-	int programCounter;
-	int flagInicio;
-	int socket;
-	int pathAbierto;
-} __attribute__((packed)) DTB;
 
-typedef struct DTB_aux {
-	int idGdt;
-	int programCounter;
-	int flagInicio;
-	int socket;
-	int tamanioPath;
-} __attribute__((packed)) DTB_aux;
 
 //prototipos
 int conectarClienteA(int, char*);

@@ -133,26 +133,28 @@ int enviarDtb(int socket, DTB* estructura){
 		return -1;
 	}
 	// serializo el DTB
-	DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
-	aux->flagInicio = estructura->flagInicio;
-	aux->idGdt = estructura->idGdt;
-	aux->programCounter = estructura->programCounter;
-	aux->socket = estructura->socket;
-	int tamanioString = strlen(estructura->pathScript);
-	aux->tamanioPath = tamanioString;
+	resDtb* aux = dtbToAux(estructura);
+
 	if(enviarHeader(socket,"",ENVIAR_DTB) == -1){
 		// error al enviar header.
 		puts("Error al enviar header");
 		return -1;
 	}
-	if(send(socket, aux,sizeof(DTB_aux), 0) <= 0){
+	if(send(socket, aux->aux,sizeof(dtbAux), 0) <= 0){
 		// error al enviar el DTB
 		puts("Error al enviar DTB");
 		return -1;
 	}
-	char* pathAEnviar = malloc(strlen(estructura->pathScript));
-	strcpy(pathAEnviar, estructura->pathScript);
-	enviarMensaje(socket, pathAEnviar);
+	if(aux->aux->tamanioArchivos != 0){
+		enviarMensaje(socket, aux->archivos);
+	}
+	if(aux->aux->tamanioRecursos != 0){
+		enviarMensaje(socket, aux->recursos);
+	}
+	if(aux->aux->tamanioPath != 0){
+		enviarMensaje(socket, aux->path);
+	}
+
 	return 1;
 }
 
@@ -160,26 +162,41 @@ DTB* recibirDtb(int socket){
 
 	ContentHeader *header = recibirHeader(socket);
 	if(header->id == ENVIAR_DTB){
-		DTB_aux* aux = (DTB_aux*) malloc(sizeof(DTB_aux));
+		resDtb* resultado = (resDtb*) malloc(sizeof(resDtb));
 
-		int reciv = recv(socket, aux, sizeof(DTB_aux), 0);
+		dtbAux* aux = (dtbAux*) malloc(sizeof(dtbAux));
+		int reciv = recv(socket, aux, sizeof(dtbAux), 0);
 		if(reciv <= 0){
 			puts("error al recibir DTB aux");
 			close(socket);
 			free(aux);
 			exit(1);
 		}
-		char* path = malloc(aux->tamanioPath);
-		recibirMensaje(socket, aux->tamanioPath, &path);
-		DTB* dtb = (DTB*) malloc(sizeof(DTB));
-		dtb->idGdt = aux->idGdt;
-		dtb->flagInicio = aux->flagInicio;
-		dtb->programCounter = aux->programCounter;
-		dtb->socket = aux->socket;
-		dtb->pathScript = malloc(strlen(path));
-		strcpy(dtb->pathScript, path);
-		free(path);
-		return dtb;
+		resultado->archivos = malloc(aux->tamanioArchivos);
+		resultado->recursos = malloc(aux->tamanioRecursos);
+		resultado->path = malloc(aux->tamanioPath);
+
+		if(aux->tamanioArchivos != 0){
+			recibirMensaje(socket, aux->tamanioArchivos, &(resultado->archivos));
+		}
+		if(aux->tamanioRecursos != 0){
+			recibirMensaje(socket, aux->tamanioRecursos, &(resultado->recursos));
+		}
+		if(aux->tamanioPath != 0){
+			recibirMensaje(socket, aux->tamanioPath, &(resultado->path));
+		}
+
+		resultado->aux = aux;
+		return auxToDtb(resultado);
+//		DTB* dtb = (DTB*) malloc(sizeof(DTB));
+//		dtb->idGdt = aux->idGdt;
+//		dtb->flagInicio = aux->flagInicio;
+//		dtb->programCounter = aux->programCounter;
+//		dtb->socket = aux->socket;
+//		dtb->pathScript = malloc(strlen(path));
+//		strcpy(dtb->pathScript, path);
+//		free(path);
+//		return dtb;
 	}
 	puts("Header incorrecto");
 	return NULL;

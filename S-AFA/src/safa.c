@@ -229,6 +229,8 @@ void* manejarColas(){
 	dummy->pathScript = malloc(strlen("vacio") + 1);
 	strcpy(dummy->pathScript, "vacio");
 	dummy->pathScript[strlen("vacio")] = '\0';
+	dummy->archivos = list_create();
+	dummy->recursos = list_create();
 
 	list_add(colaReady, (void*)dummy);
 
@@ -672,6 +674,8 @@ int cmdEjecutar(char* path){
 	dtb->flagInicio = 1;
 	dtb->programCounter = 0;
 	dtb->socket = -1;
+	dtb->archivos = list_create();
+	dtb->recursos = list_create();
 
 	list_add(colaNew,(void*) dtb);
 	log_info(logger, "Se ha añadido un el G.DT %d a la cola de NEW", idGdt);

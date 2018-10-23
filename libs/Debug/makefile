@@ -29,8 +29,11 @@ endif
 # All Target
 all: liblibs.so
 
+dependents:
+	-cd /home/utnso/workspace/tp-2018-2c-keAprobo/libs/Release && $(MAKE) all
+
 # Tool invocations
-liblibs.so: $(OBJS) $(USER_OBJS)
+liblibs.so: $(OBJS) $(USER_OBJS) /home/utnso/workspace/tp-2018-2c-keAprobo/libs/Release/liblibs.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
 	gcc -shared -o "liblibs.so" $(OBJS) $(USER_OBJS) $(LIBS)
@@ -43,5 +46,6 @@ clean:
 	-@echo ' '
 
 .PHONY: all clean dependents
+/home/utnso/workspace/tp-2018-2c-keAprobo/libs/Release/liblibs.so:
 
 -include ../makefile.targets

@@ -14,6 +14,22 @@ int main(void) {
 	puts("Iniciando CPU...");
 	inciarVariables();
 
+//	 DTB* dtb = (DTB*) malloc(sizeof(DTB));
+//   dtb->archivos = list_create();
+//   dtb->recursos = list_create();
+//   dtb->idGdt = 1;
+//   dtb->flagInicio = 1;
+//   dtb->pathScript = string_duplicate("sanLorenzo.bin");
+//   dtb->socket = -1;
+//   dtb->programCounter = 0;
+//   list_add(dtb->recursos, (void*) "Conmebol");
+//   list_add(dtb->recursos, (void*) "Conmebol1");
+//   list_add(dtb->archivos, (void*) "jugadores.bin");
+//
+//   resDtb* aux = dtbToAux(dtb);
+//   DTB* Dtb = auxToDtb(aux);
+//   printf("%s", dtb->pathScript);
+
 	socketSAFA = clienteConectarComponente("CPU","S-AFA", puertoSafa, ipSafa);
 	// RECIBO EL HEADER DEL SAFA CON MI ID Y LA RAFAGA
 	if(recv(socketSAFA, &self, sizeof(InfoCpu), 0) < 0){
@@ -80,6 +96,7 @@ void recibirMensajes(){
 	pSockets->socketSafa = socketSAFA;
 	while(true){
 		dtb = recibirDtb(socketSAFA);
+		printf("archivos: %d -- recursos: %d", list_size(dtb->archivos), list_size(dtb->recursos));
 		if(dtb->flagInicio == 0){
 			// ES EL DTB DUMMY
 			puts("DTB Dummy");

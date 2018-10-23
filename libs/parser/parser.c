@@ -8,7 +8,7 @@
 #include "parser.h"
 
 int abrir(int socketDam, char* path, DTB* dtb){
-	if(dtb->pathAbierto == 0){
+//	if(dtb->pathAbierto == 0){
 		// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
 		enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
 		// LE ENVIO EL ID DEL GDT Y EL PATH
@@ -16,14 +16,14 @@ int abrir(int socketDam, char* path, DTB* dtb){
 		enviarMensaje(socketDam, dtb->pathScript);
 		enviarHeader(socketDam, "", dtb->idGdt);
 		return ABRIR_BLOQUEAR;
-	}
+//	}
 	return ABRIR_OK;
 }
 
 int asignar(int socketFm9, char** valores, DTB* dtb){
-	if(dtb->pathAbierto == 0){
-		return ASIGNAR_ABORTAR_DTB;
-	}
+//	if(dtb->pathAbierto == 0){
+//		return ASIGNAR_ABORTAR_DTB;
+//	}
 	if(valores[1] && valores[2] && valores[3]){
 		// DEBO ENVIAR AL FM9 EL PATH(SPLIT[1]), LA LINEA(SPLIT[2]), Y EL DATO(SPLIT[3])
 	}
@@ -60,9 +60,9 @@ int concentrar(){
 	return CONCENTRAR_OK;
 }
 int flush(int socketDam,int socketSafa, char* path, DTB* dtb){
-	if(dtb->pathAbierto == 0){
-		return FLUSH_ABORTAR;
-	}
+//	if(dtb->pathAbierto == 0){
+//		return FLUSH_ABORTAR;
+//	}
 	enviarHeader(socketDam,path,DAM_FLUSH);
 	enviarMensaje(socketDam, path);
 
@@ -73,9 +73,9 @@ int flush(int socketDam,int socketSafa, char* path, DTB* dtb){
 }
 
 int closeOp(int socketFm9, char* path, DTB* dtb){
-	if(dtb->pathAbierto == 0){
-		return CLOSE_ABORTAR;
-	}
+//	if(dtb->pathAbierto == 0){
+//		return CLOSE_ABORTAR;
+//	}
 	// TODO: enviar al FM9 los datos para q saque de memoria el archivo asociado
 	return CLOSE_OK;
 }
