@@ -12,18 +12,31 @@
 
 int main(void) {
 	puts("Iniciando Funes Memory...");
+	int i = printf("El tamaño de linea es:\n");
 	iniciarVariables();
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
-
+//
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
 
-	esperarConexiones();
+	char *max_tam_linea = string_itoa(max_linea);
+	printf("El tamaño de linea es: %s\n", max_tam_linea);
+	enviarHeader(socketDam, max_tam_linea, FM9_ENVIAR_MAX_TAM_LINEA);
+	enviarMensaje(socketDam, max_tam_linea);
+
+
 
 	recibirGDT();
 
-	finalizarVariables();
-	puts("Finalizo Funes Memory...");
+	while(1){
+
+	}
+
+//	esperarConexiones();
+//
+//
+//	finalizarVariables();
+//	puts("Finalizo Funes Memory...");
 	return EXIT_SUCCESS;
 }
 
@@ -65,7 +78,7 @@ void esperarConexiones(){
 }
 
 void iniciarVariables(){
-	config = config_create("./config/config.txt");
+	config = config_create("/home/utnso/workspace/tp-2018-2c-keAprobo/FunesMemory/config/config.txt");
 	if(config == NULL){
 		puts("Error al leer configuraciones...");
 		finalizarVariables();
@@ -73,6 +86,7 @@ void iniciarVariables(){
 	}
 	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
 	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
+	max_linea = config_get_int_value(config, "MAX_LINEA");
 	listaCpu = list_create();
 }
 

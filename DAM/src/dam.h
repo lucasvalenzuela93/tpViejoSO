@@ -10,11 +10,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <sockets1/sockets.h>
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
 #include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <readline/chardefs.h>
+#include <string.h>
+#include <stdbool.h>
+#include <generales/generales.h>
 
 typedef struct CPU_struct {
 	int id;
