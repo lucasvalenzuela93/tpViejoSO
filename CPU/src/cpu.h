@@ -16,6 +16,7 @@
 #include <commons/config.h>
 #include <pthread.h>
 #include <generales/generales.h>
+#include <parser/parser.h>
 
 const char* IP = "127.0.0.1";
 const int PUERTO = 8000;

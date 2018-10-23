@@ -30,13 +30,16 @@
 								<option id="gnu.c.compiler.option.include.paths.928717446" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libs}&quot;"/>
 								</option>
+								<option id="gnu.c.compiler.option.dialect.std.1125727602" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1201941345" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.1378576287" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
 								<option id="gnu.c.link.option.paths.1681407685" name="Library search path (-L)" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libs/Debug}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libs}&quot;"/>
 								</option>
 								<option id="gnu.c.link.option.libs.2138285101" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="libs"/>
 									<listOptionValue builtIn="false" value="commons"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
@@ -50,7 +53,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.296468029" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.1063107923" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
 								<option id="gnu.both.asm.option.include.paths.1585140617" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/biblioteca-El-Rejunte}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libs}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1350717373" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -66,8 +69,11 @@
 				<externalSettings containerId="libs;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/biblioteca-El-Rejunte"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/libs"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/biblioteca-El-Rejunte/Debug"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/libs/Debug"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="biblioteca-El-Rejunte" srcPrefixMapping="" srcRootPath=""/>
+						<entry flags="RESOLVED" kind="libraryFile" name="libs" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 			</storageModule>

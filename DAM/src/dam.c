@@ -10,20 +10,6 @@
 
 #include "dam.h"
 
-void enviarAFileSystem(char* mensaje, int idDtb, int id){
-	// WRAPER DE ENVIO DE INFO A FILE SYSTEM PARA HACERLO SINCORNIZADO
-//	pthread_mutex_lock(&mutexEnviarMDJ);
-	if(mensaje && idDtb){
-		enviarHeader(socketFileSystem,"",id);
-		enviarHeaderYMensaje(socketFileSystem, mensaje, idDtb);
-	}else if(!mensaje){
-		enviarHeader(socketFileSystem,"",id);
-	}else {
-		enviarHeaderYMensaje(socketFileSystem,mensaje,id);
-	}
-//	pthread_mutex_unlock(&mutexEnviarMDJ);
-}
-
 int main(void) {
 	puts("Iniciando DAM...");
 	iniciarVariables();
@@ -34,6 +20,13 @@ int main(void) {
 	socketFileSystem = clienteConectarComponente("DAM", "FILE_SYSTEM", puertoFileSystem, ipFileSystem);
 
 	socketFunesMemory = clienteConectarComponente("DAM", "FUNES_MEMORY", puertoFunesMemory,ipFunesMemory);
+
+	pthread_t hiloMDJ;
+	if(pthread_create(&hiloMDJ, NULL, recibirYEnviarMDJ, NULL)){
+		puts("Error al crear hilo de esucha mdj");
+		finalizarVariables();
+		exit(1);
+	}
 
 	esperarConexiones();
 
@@ -121,36 +114,93 @@ void recibirYEnviarCPU(void* cpuVoid){
 				enviarHeader(socketSafa,"", header->id);
 				break;
 			}
+			case DAM_CREAR:{
+				char* path = malloc(header->largo);
+				int idDtb, cantLineas;
+				recibirMensaje(cpu->socket, header->largo, &path);
+				printf("PATH: %s\n", path);
+				printf("Largo Header: %d\n", header->largo);
+				// RECIBO EL ID DEL DTB
+				header = recibirHeader(cpu->socket);
+				idDtb = header->id;
+				// LUEGO RECIBO LA CANTIDAD DE LINEAS
+				header = recibirHeader(cpu->socket);
+				cantLineas = header->id;
+				// DEBO ENVIAR AL MDJ LOS DATOS PARA QUE CREE EL ARCHIVO
+				pthread_mutex_lock(&mutexEnviarMDJ);
+				enviarHeader(socketFileSystem,path,DAM_CREAR);
+				enviarHeader(socketFileSystem, path, idDtb);
+				enviarHeader(socketFileSystem, path, cantLineas);
+				enviarMensaje(socketFileSystem, path);
+				pthread_mutex_unlock(&mutexEnviarMDJ);
+				puts("DAM Crear");
+
+//				// TEST PARA Q SAFA MUEVA A READY
+//				sleep(2);
+//				enviarHeader(socketSafa, "", SAFA_DESBLOQUEAR_CPU);
+//				enviarHeader(socketSafa,"", header->id);
+				free(path);
+				break;
+			}
+			case DAM_BORRAR:{
+				puts("DAM borrar");
+				int idDtb;
+				// RECIBO EL ID DEL DTB
+				header = recibirHeader(cpu->socket);
+				idDtb = header->id;
+				char* path = malloc(header->largo);
+				// RECIBO EL PATH DEL CPU
+				recibirMensaje(cpu->socket, header->largo, &path);
+				// DEBO ENVIAR AL MDJ LOS DATOS PARA QUE BORRE EL ARCHIVO
+				pthread_mutex_lock(&mutexEnviarMDJ);
+				enviarHeader(socketFileSystem,path,DAM_BORRAR);
+				enviarHeader(socketFileSystem, path, idDtb);
+				enviarMensaje(socketFileSystem, path);
+				pthread_mutex_unlock(&mutexEnviarMDJ);
+				free(path);
+				break;
+			}
+			case DAM_FLUSH:{
+
+				break;
+			}
 		}
 	}
 	free(header);
 }
 
 void recibirYEnviarMDJ(){
+	puts("Escucho mensajes MDJ");
+	ContentHeader *header;
 	while(true){
-		ContentHeader *header = recibirHeader(socketFileSystem);
+		header = recibirHeader(socketFileSystem);
+		printf("Recibi header MDJ -- id: %d\n", header->id);
+		int headId = header->id;
+		if(headId == MDJ_CREACION_ARCHIVO_OK || headId == MDJ_BORRAR_OK || headId == MDJ_FLUSH_OK){
+			puts("Desbloquear DTB");
+			header = recibirHeader(socketFileSystem);
+			// REENVIO EL MENSAJE AL SAFA AVISANDOLE QUE DESBLOQUEE A EL GDT
+			printf("DTB a desbloquear: %d\n", header->id);
+			enviarHeader(socketSafa, "", SAFA_DESBLOQUEAR_CPU);
+			enviarHeader(socketSafa,"", header->id);
+			continue;
+		}
 		switch(header->id){
-			case MDJ_PATH_GET_OK:{
-				// DEBO AVISARLE AL SAFA QUE DESBLOQUEE A DICHO
-				// ver si tengo q mandar el id del DTB y sino de donde lo saco
-				puts("Desbloquear CPU");
-				int idGdt;
-				header = recibirHeader(socketFileSystem);
-				idGdt = header->id;
-				char* path = malloc(header->largo);
-				recibirMensaje(socketFileSystem,header->largo,path);
-				// REENVIO EL MENSAJE AL SAFA AVISANDOLE QUE DESBLOQUEE A EL GDT
-				enviarHeader(socketSafa, "", SAFA_DESBLOQUEAR_CPU);
-				enviarHeader(socketSafa,"", idGdt);
-				puts("safa avisado del bloqueo");
+			case MDJ_CREACION_ARCHIVO_OK:{
+
 				break;
+			}
+			case MDJ_BORRAR_OK:{
+				header = recibirHeader(socketFileSystem);
+
 			}
 		}
 	}
+	free(header);
 }
 
 void iniciarVariables(){
-	config = config_create("../config/config.txt");
+	config = config_create(PATH_CONFIG);
 	if(config == NULL){
 		puts("Error al abrir archivo de configuracion...");
 		finalizarVariables();
@@ -167,6 +217,9 @@ void iniciarVariables(){
 	puertoFunesMemory = config_get_int_value(config, "PUERTO_FUNES_MEMORY");
 
 	listaCpu = list_create();
+
+	pthread_mutex_init(&mutexEnviarMDJ, NULL);
+
 	puts("Variables iniciadas...");
 }
 

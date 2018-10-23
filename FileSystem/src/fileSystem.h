@@ -40,15 +40,6 @@
 #define TAMANIO "TAMANIO"
 #define BLOQUES "BLOQUES"
 
-enum RTAS {
-	ARCHIVO_INEXISTENTE,
-	ARCHIVO_EXISTENTE
-};
-
-enum TIPO_BITMAP {
-	LIBRE,
-	OCUPADO
-};
 
 typedef struct COMANDO {
 	char* cmd;
