@@ -18,7 +18,6 @@ typedef struct DTB {
 	int programCounter;
 	int flagInicio;
 	int socket;
-	t_list *recursos;
 	t_list *archivos;
 } __attribute__((packed)) DTB;
 
@@ -28,14 +27,12 @@ typedef struct dtbAux {
 	int flagInicio;
 	int socket;
 	int tamanioPath;
-	int tamanioRecursos;
 	int tamanioArchivos;
 } __attribute__((packed)) dtbAux;
 
 typedef struct resDtb {
 	dtbAux *aux;
 	char* path;
-	char* recursos;
 	char* archivos;
 } resDtb;
 

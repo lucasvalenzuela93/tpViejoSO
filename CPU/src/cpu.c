@@ -78,6 +78,10 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
 			sleep(2);
 		}else if(c != EOF){
 			string_append_with_format(&linea,"%c", c);
+		}else if(strlen(linea) > 0){
+			parsearLinea(linea, parser, dtb);
+			free(linea);
+			return -1;
 		}else{
 			free(linea);
 			return -1;
@@ -94,38 +98,55 @@ void recibirMensajes(){
 	pSockets->socketDam = socketDam;
 	pSockets->socketFm9 = socketFunesMemory;
 	pSockets->socketSafa = socketSAFA;
+	ContentHeader *header;
 	while(true){
-		dtb = recibirDtb(socketSAFA);
-		printf("archivos: %d -- recursos: %d", list_size(dtb->archivos), list_size(dtb->recursos));
-		if(dtb->flagInicio == 0){
-			// ES EL DTB DUMMY
-			puts("DTB Dummy");
-			// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
-			enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
-			// LE ENVIO EL ID DEL GDT Y EL PATH
-			enviarHeader(socketDam,dtb->pathScript,SAFA_ID_GDT_DEL_CPU);
-			enviarMensaje(socketDam, dtb->pathScript);
-			enviarHeader(socketDam, "", dtb->idGdt);
-			// LE DIGO AL SAFA QUE ME BLOQUEE
-			enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
-			enviarDtb(socketSAFA, dtb);
-			puts("DTB enviado...");
-		}else {
-			// EJECUTO NORMAL
-			puts(" DTB Normal");
-			char* path1 = string_new();
-			path1 = string_duplicate("test.txt");
-			if(parsearArchivo(path1, pSockets, dtb) == -1){
-				// TODO: avisar que termino el archivo al SAFA
-				log_info(logger, "Fin de archivo");
-				free(path1);
+		header = recibirHeader(socketSAFA);
+		switch(header->id){
+			case ENVIAR_DTB:{
+				dtb = recibirDtb(socketSAFA);
+				printf("archivos: %d\n", list_size(dtb->archivos));
+				if(dtb->flagInicio == 0){
+					// ES EL DTB DUMMY
+					puts("DTB Dummy");
+					// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
+					enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
+					// LE ENVIO EL ID DEL GDT Y EL PATH
+					enviarHeader(socketDam,dtb->pathScript,SAFA_ID_GDT_DEL_CPU);
+					enviarMensaje(socketDam, dtb->pathScript);
+					enviarHeader(socketDam, "", dtb->idGdt);
+					// LE DIGO AL SAFA QUE ME BLOQUEE
+					enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
+					enviarDtb(socketSAFA, dtb);
+					puts("DTB enviado...");
+				}else {
+					// EJECUTO NORMAL
+					puts(" DTB Normal");
+					char* path1 = string_new();
+					path1 = string_duplicate("test.txt");
+					if(parsearArchivo(path1, pSockets, dtb) == -1){
+						// TODO: avisar que termino el archivo al SAFA
+						log_info(logger, "Fin de archivo");
+						sleep(1);
+						enviarHeader(socketSAFA, "", SAFA_MOVER_EXIT);
+						enviarDtb(socketSAFA, dtb);
+					}else {
+						dtb->programCounter ++;
+						if(dtb->programCounter == self->rafaga){
+							enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
+							enviarDtb(socketSAFA, dtb);
+						}
+						sleep(1);
+					}
+
+					free(path1);
+
+				}
 				break;
 			}
-
-			free(path1);
-
+			default: break;
 		}
-		sleep(1);
+
+
 		puts("complete cliclo");
 	}
 	free(dtb);

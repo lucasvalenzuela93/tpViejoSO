@@ -16,6 +16,7 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
+#include <commons/collections/dictionary.h>
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -23,7 +24,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <generales/generales.h>
-
+#include <parser/parser.h>
 
 
 const char* CORRUPTO = "Corrupto";
@@ -46,6 +47,10 @@ typedef struct CPU_struct {
 	pthread_t hilo;
 } CPU_struct;
 
+typedef struct Recurso {
+	char* nombre;
+	int cantidad;
+} Recurso;
 
 
 
@@ -62,6 +67,10 @@ int multiprogramacion;
 int quantum;
 int idGdt = 1;
 char* algoritmo;
+
+t_list* recursos;
+t_dictionary* bloqueadoRecursos;
+
 t_list *listaCpu;
 t_list *colaNew;
 t_list *colaReady;

@@ -33,16 +33,17 @@ int asignar(int socketFm9, char** valores, DTB* dtb){
 int wait(int socketSafa, char* recurso,DTB* dtb){
 	// LE AVISO AL SAFA Q QUIERO PEDIR UN RECURSO
 	enviarHeader(socketSafa,recurso,SAFA_PEDIR_RECURSO);
-	enviarHeader(socketSafa,"",dtb->idGdt);
+	enviarHeader(socketSafa,recurso,dtb->idGdt);
 	enviarMensaje(socketSafa,recurso);
 	// RECIBO LA RESPUESTA DEL SAFA A LA PETICION DEL RECURSO
 	ContentHeader *header = recibirHeader(socketSafa);
-	if(header->id == RECURSO_OK){
+	if(header->id == WAIT_OK){
 		return WAIT_OK;
-	}else if(header->id == RECURSO_RETENIDO){
+	}else if(header->id == WAIT_ESPERAR){
 		// LE DIGO AL SAFA QUE BLOQUEE AL DTB
-		enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU_RETENCION);
+		enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
 		enviarDtb(socketSafa, dtb);
+		puts("Wait Esperar");
 		return WAIT_ESPERAR;
 	}
 }

@@ -148,9 +148,6 @@ int enviarDtb(int socket, DTB* estructura){
 	if(aux->aux->tamanioArchivos != 0){
 		enviarMensaje(socket, aux->archivos);
 	}
-	if(aux->aux->tamanioRecursos != 0){
-		enviarMensaje(socket, aux->recursos);
-	}
 	if(aux->aux->tamanioPath != 0){
 		enviarMensaje(socket, aux->path);
 	}
@@ -173,15 +170,12 @@ DTB* recibirDtb(int socket){
 			exit(1);
 		}
 		resultado->archivos = malloc(aux->tamanioArchivos);
-		resultado->recursos = malloc(aux->tamanioRecursos);
 		resultado->path = malloc(aux->tamanioPath);
 
 		if(aux->tamanioArchivos != 0){
 			recibirMensaje(socket, aux->tamanioArchivos, &(resultado->archivos));
 		}
-		if(aux->tamanioRecursos != 0){
-			recibirMensaje(socket, aux->tamanioRecursos, &(resultado->recursos));
-		}
+
 		if(aux->tamanioPath != 0){
 			recibirMensaje(socket, aux->tamanioPath, &(resultado->path));
 		}
