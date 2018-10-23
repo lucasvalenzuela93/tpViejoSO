@@ -23,14 +23,36 @@ typedef struct CPU_struct {
 	int socket;
 } CPU_struct;
 
+typedef struct tabla_segmento {
+	int id;
+	int base;
+	int limite;
+}tabla_segmento;
+
+typedef struct direccion_logica{
+	int segmento;
+	int offset;
+}direccion_logica;
+
+typedef struct direccion_fisica{
+	struct tabla_segmento* base;
+	struct direccion_logica* offset;
+}direccion_fisica;
+
+
 t_config* config;
 char* ipEscucha;
 int puertoEscucha;
-int socketEscucha, socketCpu, socketDam;
-t_list *listaCpu;
+int socketEscucha, socketCpu, socketDam, idGDT;
+int* id;
+
+t_list* listaCpu;
+t_list* lista_idGDTs;
 
 void iniciarVariables();
 void finalizarVariables();
 void esperarConexiones();
+void recibirGDT();
+void guardarGDT();
 
 #endif /* SRC_FUNESMEMORY_H_ */
