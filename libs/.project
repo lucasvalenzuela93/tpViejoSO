@@ -3,6 +3,7 @@
 	<name>libs</name>
 	<comment></comment>
 	<projects>
+		<project>libs</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

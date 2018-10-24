@@ -37,6 +37,7 @@ char* ipSafa;
 char* ipFileSystem;
 char* ipFunesMemory;
 int socketSafa, socketEscucha, socketCpu, socketFileSystem, socketFunesMemory;
+int max_linea;
 t_list *listaCpu;
 pthread_mutex_t mutexEnviarMDJ;
 
@@ -45,5 +46,6 @@ void finalizarVariables();
 void esperarConexiones();
 void recibirYEnviarCPU(void*);
 void recibirYEnviarMDJ();
+int recibirTamMaxLinea();
 
 #endif /* SRC_DAM_H_ */

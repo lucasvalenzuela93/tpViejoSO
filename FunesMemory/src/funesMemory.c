@@ -12,31 +12,20 @@
 
 int main(void) {
 	puts("Iniciando Funes Memory...");
-	int i = printf("El tamaño de linea es:\n");
 	iniciarVariables();
 
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
-//
+
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
-
-	char *max_tam_linea = string_itoa(max_linea);
-	printf("El tamaño de linea es: %s\n", max_tam_linea);
-	enviarHeader(socketDam, max_tam_linea, FM9_ENVIAR_MAX_TAM_LINEA);
-	enviarMensaje(socketDam, max_tam_linea);
-
-
+	enviarTamMaxLinea(socketDam);
 
 	recibirGDT();
 
-	while(1){
+	esperarConexiones();
 
-	}
 
-//	esperarConexiones();
-//
-//
-//	finalizarVariables();
-//	puts("Finalizo Funes Memory...");
+	finalizarVariables();
+	puts("Finalizo Funes Memory...");
 	return EXIT_SUCCESS;
 }
 
@@ -69,6 +58,7 @@ void esperarConexiones(){
 			cpu->id = nextCpuId;
 			cpu->socket = socketCpu[numeroClientes - 1];
 			printf("Se conecto CPU con id: %d \n", cpu->id);
+			enviarTamMaxLinea(cpu->socket);
 			list_add(listaCpu, (void*) cpu);
 			free(cpu);
 			nextCpuId ++;
@@ -78,7 +68,7 @@ void esperarConexiones(){
 }
 
 void iniciarVariables(){
-	config = config_create("/home/utnso/workspace/tp-2018-2c-keAprobo/FunesMemory/config/config.txt");
+	config = config_create(PATH_CONFIG_FUNES_MEMORY);
 	if(config == NULL){
 		puts("Error al leer configuraciones...");
 		finalizarVariables();
@@ -88,6 +78,13 @@ void iniciarVariables(){
 	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
 	max_linea = config_get_int_value(config, "MAX_LINEA");
 	listaCpu = list_create();
+}
+
+int enviarTamMaxLinea(int socketDestino){
+	char *max_tam_linea = string_itoa(max_linea);
+	enviarHeader(socketDestino, max_tam_linea, FM9_ENVIAR_MAX_TAM_LINEA);
+	enviarMensaje(socketDestino, max_tam_linea);
+	return 1;
 }
 
 void recibirGDT(int idGDT){ //recibir y guardar idGDT de DTB desde DAM

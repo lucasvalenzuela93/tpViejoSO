@@ -16,6 +16,7 @@
 #include <commons/config.h>
 #include <pthread.h>
 #include <generales/generales.h>
+#include <parser/parser.h>
 
 const char* IP = "127.0.0.1";
 const int PUERTO = 8000;
@@ -31,6 +32,7 @@ char* ipDam;
 char* ipFunesMemory;
 int puertoSafa, puertoDam, puertoFunesMemory;
 int socketSAFA, socketDam, socketFunesMemory;
+int max_linea;
 pthread_t *hiloMensajes;
 InfoCpu *self;
 
@@ -39,6 +41,7 @@ int ejecutar = 0;
 void inciarVariables();
 void finalizarVariables();
 void escucharMensajesSafa();
+int recibirTamMaxLinea();
 
 
 #endif /* SRC_CPU_H_ */

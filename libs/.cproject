@@ -6,8 +6,11 @@
 				<externalSettings>
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/biblioteca-El-Rejunte"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/libs"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/biblioteca-El-Rejunte/Debug"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/libs/Debug"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="biblioteca-El-Rejunte" srcPrefixMapping="" srcRootPath=""/>
+						<entry flags="RESOLVED" kind="libraryFile" name="libs" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<extensions>
@@ -33,13 +36,15 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.so.debug.932537053" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.so.debug">
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.so.debug.option.optimization.level.1319508739" name="Optimization Level" superClass="gnu.c.compiler.so.debug.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.c.compiler.so.debug.option.debugging.level.2004757379" name="Debug Level" superClass="gnu.c.compiler.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.include.paths.506567471" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.963386909" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.so.debug.1146095913" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.so.debug">
-								<option defaultValue="true" id="gnu.c.link.so.debug.option.shared.2104533402" name="Shared (-shared)" superClass="gnu.c.link.so.debug.option.shared" valueType="boolean"/>
+								<option defaultValue="true" id="gnu.c.link.so.debug.option.shared.2104533402" name="Shared (-shared)" superClass="gnu.c.link.so.debug.option.shared" useByScannerDiscovery="false" valueType="boolean"/>
 								<option id="gnu.c.link.option.libs.769075005" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="commons"/>
 								</option>
+								<option id="gnu.c.link.option.paths.994892148" name="Library search path (-L)" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.810208717" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -49,13 +54,50 @@
 								<option defaultValue="true" id="gnu.cpp.link.so.debug.option.shared.24074638" name="Shared (-shared)" superClass="gnu.cpp.link.so.debug.option.shared" valueType="boolean"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.so.debug.1904949747" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.so.debug">
+								<option id="gnu.both.asm.option.include.paths.691937861" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/biblioteca-El-Rejunte}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1791285438" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.so.debug.260771921.1418081850" name="/" resourcePath="parser">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.so.debug.1205332294" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.so.debug" unusedChildren="">
+							<targetPlatform id="cdt.managedbuild.target.gnu.platform.so.debug" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.so.debug"/>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1466240620" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.183968116"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.1578489471" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.1886809158"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.so.debug.1108589748" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.so.debug.932537053">
+								<option id="gnu.c.compiler.option.include.paths.343347227" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/biblioteca-El-Rejunte}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.912134890" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.so.debug.863462125" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.so.debug.1146095913"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.so.debug.894546633" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.so.debug.2006703031"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.so.debug.1346854968" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.so.debug.1904949747">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1851068560" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="generales|parser|sockets1|commons" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="commons"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="generales"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="parser"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sockets1"/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
-			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings">
+				<externalSettings containerId="libs;cdt.managedbuild.config.gnu.so.release.778105835" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
+					<externalSetting>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/biblioteca-El-Rejunte"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/biblioteca-El-Rejunte/Release"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="biblioteca-El-Rejunte" srcPrefixMapping="" srcRootPath=""/>
+					</externalSetting>
+				</externalSettings>
+			</storageModule>
 		</cconfiguration>
 		<cconfiguration id="cdt.managedbuild.config.gnu.so.release.778105835">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.so.release.778105835" moduleId="org.eclipse.cdt.core.settings" name="Release">
@@ -125,5 +167,12 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/libs"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/libs"/>
+		</configuration>
+	</storageModule>
 </cproject>
