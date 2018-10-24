@@ -51,7 +51,7 @@ int parsearArchivo(char *path,parserSockets *parser, DTB **dtb){
 	int i = 0;
 	char c;
 	// TODO: recibir el tamaño de linea del FM9
-	while(i < tamanioLinea && dtbo->programCounter != self->rafaga){
+	while(i < tamanioLinea){
 		c = (char) fgetc(file);
 
 		if(c == '\n'){
