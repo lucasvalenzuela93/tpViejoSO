@@ -10,9 +10,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <sockets1/sockets.h>
+#include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
+#include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <readline/chardefs.h>
+#include <string.h>
+#include <stdbool.h>
+#include <generales/generales.h>
 
 const char* IP = "127.0.0.1";
 const int PUERTO_ESCUCHA = 8101;
@@ -44,13 +54,16 @@ char* ipEscucha;
 int puertoEscucha;
 int socketEscucha, socketCpu, socketDam, idGDT;
 int* id;
+int max_linea;
 
 t_list* listaCpu;
 t_list* lista_idGDTs;
 
+
 void iniciarVariables();
 void finalizarVariables();
 void esperarConexiones();
+int enviarTamMaxLinea(int);
 void recibirGDT();
 void guardarGDT();
 

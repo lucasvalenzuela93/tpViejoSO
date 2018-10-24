@@ -17,10 +17,12 @@ int main(void) {
 	socketEscucha = socketServidor(puertoEscucha, ipEscucha, 50);
 
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
+	enviarTamMaxLinea(socketDam);
+
+	recibirGDT();
 
 	esperarConexiones();
 
-	recibirGDT();
 
 	finalizarVariables();
 	puts("Finalizo Funes Memory...");
@@ -56,6 +58,7 @@ void esperarConexiones(){
 			cpu->id = nextCpuId;
 			cpu->socket = socketCpu[numeroClientes - 1];
 			printf("Se conecto CPU con id: %d \n", cpu->id);
+			enviarTamMaxLinea(cpu->socket);
 			list_add(listaCpu, (void*) cpu);
 			free(cpu);
 			nextCpuId ++;
@@ -65,7 +68,7 @@ void esperarConexiones(){
 }
 
 void iniciarVariables(){
-	config = config_create("./config/config.txt");
+	config = config_create(PATH_CONFIG_FUNES_MEMORY);
 	if(config == NULL){
 		puts("Error al leer configuraciones...");
 		finalizarVariables();
@@ -73,7 +76,15 @@ void iniciarVariables(){
 	}
 	ipEscucha = config_get_string_value(config, "IP_ESCUCHA");
 	puertoEscucha = config_get_int_value(config, "PUERTO_ESCUCHA");
+	max_linea = config_get_int_value(config, "MAX_LINEA");
 	listaCpu = list_create();
+}
+
+int enviarTamMaxLinea(int socketDestino){
+	char *max_tam_linea = string_itoa(max_linea);
+	enviarHeader(socketDestino, max_tam_linea, FM9_ENVIAR_MAX_TAM_LINEA);
+	enviarMensaje(socketDestino, max_tam_linea);
+	return 1;
 }
 
 void recibirGDT(int idGDT){ //recibir y guardar idGDT de DTB desde DAM
