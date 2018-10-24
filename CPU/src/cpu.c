@@ -60,14 +60,14 @@ int parsearArchivo(char *path,parserSockets *parser, DTB **dtb){
 				return -1;
 			}
 			string_append_with_format(&linea,"%c", '\0');
-			parsearLinea(linea, parser, &dtbo);
+			parsearLinea(linea, parser, dtbo);
 			linea = string_new();
 			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
 			sleep(1);
 		}else if(c != EOF){
 			string_append_with_format(&linea,"%c", c);
 		}else if(strlen(linea) > 0){
-			parsearLinea(linea, parser, &dtbo);
+			parsearLinea(linea, parser, dtbo);
 			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
 			free(linea);
 			return -1;
@@ -77,11 +77,11 @@ int parsearArchivo(char *path,parserSockets *parser, DTB **dtb){
 		}
 
 	}
-	if(dtbo->programCounter == self->rafaga){
-		printf("DESALOJO DTB: %d\n\tProgram Counter: %d\n", dtbo->idGdt, dtbo->programCounter);
-		free(linea);
-		return 2;
-	}
+//	if(dtbo->programCounter == self->rafaga){
+//		printf("DESALOJO DTB: %d\n\tProgram Counter: %d\n", dtbo->idGdt, dtbo->programCounter);
+//		free(linea);
+//		return 2;
+//	}
 	free(linea);
 	return 1;
 }

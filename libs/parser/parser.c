@@ -31,6 +31,7 @@ int asignar(int socketFm9, char** valores, DTB* dtb){
 }
 
 int wait(int socketSafa, char* recurso,DTB* dtb){
+	printf("\tWAIT -- %s\n", recurso);
 	// LE AVISO AL SAFA Q QUIERO PEDIR UN RECURSO
 	enviarHeader(socketSafa,recurso,SAFA_PEDIR_RECURSO);
 	enviarHeader(socketSafa,recurso,dtb->idGdt);
@@ -71,6 +72,7 @@ int closeOp(int socketFm9, char* path, DTB* dtb){
 }
 
 int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
+	printf("\tCREAR -- %s\n", path);
 	// ENVIO EL PATH Y EL NUMERO DE LINEAS AL DMA
 	enviarHeader(socketDam, path, DAM_CREAR);
 	enviarMensaje(socketDam,path);
@@ -85,6 +87,7 @@ int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
 }
 
 int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
+	printf("\tBORRAR -- %s\n", path);
 	// LE AVISO AL DAM QUE REENVIE UN MENSAJE DE BORRAR
 	enviarHeader(socketDam, path, DAM_BORRAR);
 
@@ -99,11 +102,8 @@ int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
 
 }
 
-int parsearLinea(char* linea, parserSockets *sockets, DTB** dtb){
-	DTB* dtbo = *dtb;
+int parsearLinea(char* linea, parserSockets *sockets, DTB* dtbo){
 	if(!string_starts_with(linea,"#")){
-
-		dtbo->programCounter ++;
 		char** split = string_split(linea, " ");
 		char* operacion = split[0];
 //		char* arg1 = split[1],
@@ -143,6 +143,5 @@ int parsearLinea(char* linea, parserSockets *sockets, DTB** dtb){
 //			char* path = string_duplicate(split[1]);
 			return borrar(sockets->socketDam, sockets->socketSafa, split[1], dtbo);
 		}
-		dtbo->programCounter ++;
 	}
 }
