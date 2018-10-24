@@ -29,11 +29,22 @@ int main(void) {
 	iniciarVariables();
 
 
-	socketSafa = clienteConectarComponente("DAM","S-AFA", puertoSafa, ipSafa);
-
-	socketFileSystem = clienteConectarComponente("DAM", "FILE_SYSTEM", puertoFileSystem, ipFileSystem);
+//	socketSafa = clienteConectarComponente("DAM","S-AFA", puertoSafa, ipSafa);
+//
+//	socketFileSystem = clienteConectarComponente("DAM", "FILE_SYSTEM", puertoFileSystem, ipFileSystem);
 
 	socketFunesMemory = clienteConectarComponente("DAM", "FUNES_MEMORY", puertoFunesMemory,ipFunesMemory);
+
+	char *max_tam_linea = string_new();
+	printf("Max tam linea vale: %s\n", max_tam_linea);
+	ContentHeader * header;
+	header = recibirHeader(socketFunesMemory);
+	if(header->id == FM9_ENVIAR_MAX_TAM_LINEA)
+		recibirMensaje(socketFunesMemory, header->largo, &max_tam_linea);
+	printf("Max_tam_linea vale: %s\n", max_tam_linea);
+	int max_tam_linea_int = atoi(max_tam_linea);
+	printf("Max_tam_linea vale: %d\n", max_tam_linea_int);
+
 
 	esperarConexiones();
 
@@ -150,7 +161,7 @@ void recibirYEnviarMDJ(){
 }
 
 void iniciarVariables(){
-	config = config_create("../config/config.txt");
+	config = config_create("/home/utnso/workspace/tp-2018-2c-keAprobo/DAM/config/config.txt");
 	if(config == NULL){
 		puts("Error al abrir archivo de configuracion...");
 		finalizarVariables();
