@@ -38,8 +38,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-int parsearArchivo(char *path,parserSockets *parser, DTB **dtb){
-	DTB *dtbo = *dtb;
+int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	int tamanioLinea = 128;
 	char* pathF = string_from_format("/home/utnso/workspace/tp-2018-2c-keAprobo/FileSystem/montaje/%s",path);
 	FILE *file = fopen(pathF, "r");
@@ -60,22 +59,36 @@ int parsearArchivo(char *path,parserSockets *parser, DTB **dtb){
 				return -1;
 			}
 			string_append_with_format(&linea,"%c", '\0');
-			parsearLinea(linea, parser, dtbo);
+			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter + 1);
+			if(parsearLinea(linea, parser, dtbo) == 1){
+				dtbo->programCounter ++;
+//				if(dtbo->programCounter % self->rafaga == 0 && dtbo->programCounter != 0){
+//					log_info(logger, "DESALOJO -- Id: %d\n", dtbo->idGdt);
+//					enviarHeader(socketSAFA,"desalojar", SAFA_BLOQUEAR_CPU);
+//					enviarDtb(socketSAFA, dtbo);
+//					break;
+//				}
+			}
 			linea = string_new();
-			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
+
 			sleep(1);
 		}else if(c != EOF){
 			string_append_with_format(&linea,"%c", c);
 		}else if(strlen(linea) > 0){
-			parsearLinea(linea, parser, dtbo);
-			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
-			free(linea);
-			return -1;
+			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter + 1);
+			if(parsearLinea(linea, parser, dtbo) == 1){
+				dtbo->programCounter ++;
+			}
+			log_info(logger, "Fin de archivo");
+			enviarHeader(socketSAFA, "exit", SAFA_BLOQUEAR_CPU);
+			enviarDtb(socketSAFA, dtbo);
+			break;
 		}else{
-			free(linea);
-			return -1;
+			log_info(logger, "Fin de archivo");
+			enviarHeader(socketSAFA, "exit", SAFA_BLOQUEAR_CPU);
+			enviarDtb(socketSAFA, dtbo);
+			break;
 		}
-
 	}
 //	if(dtbo->programCounter == self->rafaga){
 //		printf("DESALOJO DTB: %d\n\tProgram Counter: %d\n", dtbo->idGdt, dtbo->programCounter);
@@ -98,10 +111,8 @@ void recibirMensajes(){
 		switch(header->id){
 			case ENVIAR_DTB:{
 				dtb = recibirDtb(socketSAFA);
-				printf("archivos: %d\n", list_size(dtb->archivos));
 				if(dtb->flagInicio == 0){
 					// ES EL DTB DUMMY
-					puts("DTB Dummy");
 					// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
 					enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
 					// LE ENVIO EL ID DEL GDT Y EL PATH
@@ -114,21 +125,9 @@ void recibirMensajes(){
 					puts("DTB enviado...");
 				}else {
 					// EJECUTO NORMAL
-					puts(" DTB Normal");
 					char* path1 = string_new();
 					path1 = string_duplicate("test.txt");
-					int res = parsearArchivo(path1, pSockets, &dtb);
-					if(res == -1){
-						// TODO: avisar que termino el archivo al SAFA
-						log_info(logger, "Fin de archivo");
-						sleep(1);
-						enviarHeader(socketSAFA, "", SAFA_MOVER_EXIT);
-						enviarDtb(socketSAFA, dtb);
-					}else if(res == 2){
-						enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
-						enviarDtb(socketSAFA, dtb);
-						sleep(1);
-					}
+					parsearArchivo(path1, pSockets, dtb);
 					free(path1);
 				}
 				break;

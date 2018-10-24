@@ -270,7 +270,6 @@ void* manejarColas(){
 						dtb->socket = cpu->socket;
 						list_add(colaEjecucion, (void*) dtb);
 						printf("enviado a ejecutar, id: %d---socket: %d---flag: %d\n",dtb->idGdt, dtb->socket,dtb->flagInicio);
-
 					}else{
 						list_add(colaReady,(void*) dtb);
 					}
@@ -420,14 +419,20 @@ void recibirMensajesCpu(void * cpuVoid){
 						if(aux){
 						list_remove_by_condition_with_param(colaEjecucion,(void*) aux->idGdt, buscarDTBporIdInt);
 						dtb->socket = -1;
-						list_add(colaBloqueados, (void*) dtb);
+						if(header->largo == strlen("exit")){
+							log_info(logger, "DTB EXIT -- id: %d", dtb->idGdt);
+							list_add(colaExit, (void*) dtb);
+						}else {
+							log_info(logger, "DTB bloqueado -- id: %d", dtb->idGdt);
+							list_add(colaBloqueados, (void*) dtb);
+						}
+
 						}
 					}
 					// DESALOJO AL CPU DEL GDT
 					list_remove_by_condition_with_param(listaCpu, (void*) cpu->id,buscarCPUporId);
 					cpu->gdtAsignado = -1;
 					list_add(listaCpu,(void*) cpu);
-					log_info(logger, "DTB bloqueado -- id: %d", dtb->idGdt);
 					break;
 				}
 				case SAFA_PEDIR_RECURSO:{

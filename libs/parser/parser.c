@@ -36,6 +36,7 @@ int wait(int socketSafa, char* recurso,DTB* dtb){
 	enviarHeader(socketSafa,recurso,SAFA_PEDIR_RECURSO);
 	enviarHeader(socketSafa,recurso,dtb->idGdt);
 	enviarMensaje(socketSafa,recurso);
+	return 1;
 }
 int signal(int socketSafa, char* recurso, DTB* dtb){
 	// LE AVISO A SAFA QUE QUIERO LIBERAR UN RECURSO
@@ -83,7 +84,7 @@ int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
 	// BLOQUEO AL DTB
 	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
 	enviarDtb(socketSafa, dtb);
-	return CREAR_OK;
+	return 1;
 }
 
 int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
@@ -98,7 +99,7 @@ int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
 	// UNA VEZ ENVIADO TODOS LOS DATOS LE DIGO AL DAM QUE BLOQUEE EL DTB
 	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
 	enviarDtb(socketSafa, dtb);
-	return BORRAR_OK;
+	return 1;
 
 }
 
