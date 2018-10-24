@@ -14,25 +14,9 @@ int main(void) {
 	puts("Iniciando CPU...");
 	inciarVariables();
 
-//	 DTB* dtb = (DTB*) malloc(sizeof(DTB));
-//   dtb->archivos = list_create();
-//   dtb->recursos = list_create();
-//   dtb->idGdt = 1;
-//   dtb->flagInicio = 1;
-//   dtb->pathScript = string_duplicate("sanLorenzo.bin");
-//   dtb->socket = -1;
-//   dtb->programCounter = 0;
-//   list_add(dtb->recursos, (void*) "Conmebol");
-//   list_add(dtb->recursos, (void*) "Conmebol1");
-//   list_add(dtb->archivos, (void*) "jugadores.bin");
-//
-//   resDtb* aux = dtbToAux(dtb);
-//   DTB* Dtb = auxToDtb(aux);
-//   printf("%s", dtb->pathScript);
-
 	socketSAFA = clienteConectarComponente("CPU","S-AFA", puertoSafa, ipSafa);
 	// RECIBO EL HEADER DEL SAFA CON MI ID Y LA RAFAGA
-	if(recv(socketSAFA, &self, sizeof(InfoCpu), 0) < 0){
+	if(recv(socketSAFA, self, sizeof(InfoCpu), 0) < 0){
 		puts("Error al recibir informacion del handshake con el S-AFA");
 		close(socketSAFA);
 		config_destroy(config);
@@ -51,7 +35,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
+int parsearArchivo(char *path,parserSockets *parser, DTB **dtb){
+	DTB *dtbo = *dtb;
 	int tamanioLinea = 128;
 	char* pathF = string_from_format("/home/utnso/workspace/tp-2018-2c-keAprobo/FileSystem/montaje/%s",path);
 	FILE *file = fopen(pathF, "r");
@@ -63,7 +48,7 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
 	int i = 0;
 	char c;
 	// TODO: recibir el tamaño de linea del FM9
-	while(i < tamanioLinea){
+	while(i < tamanioLinea && dtbo->programCounter != self->rafaga){
 		c = (char) fgetc(file);
 
 		if(c == '\n'){
@@ -72,14 +57,15 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
 				return -1;
 			}
 			string_append_with_format(&linea,"%c", '\0');
-			parsearLinea(linea, parser, dtb);
+			parsearLinea(linea, parser, &dtbo);
 			linea = string_new();
-
-			sleep(2);
+			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
+			sleep(1);
 		}else if(c != EOF){
 			string_append_with_format(&linea,"%c", c);
 		}else if(strlen(linea) > 0){
-			parsearLinea(linea, parser, dtb);
+			parsearLinea(linea, parser, &dtbo);
+			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
 			free(linea);
 			return -1;
 		}else{
@@ -87,6 +73,11 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
 			return -1;
 		}
 
+	}
+	if(dtbo->programCounter == self->rafaga){
+		printf("DESALOJO DTB: %d\n\tProgram Counter: %d\n", dtbo->idGdt, dtbo->programCounter);
+		free(linea);
+		return 2;
 	}
 	free(linea);
 	return 1;
@@ -123,24 +114,26 @@ void recibirMensajes(){
 					puts(" DTB Normal");
 					char* path1 = string_new();
 					path1 = string_duplicate("test.txt");
-					if(parsearArchivo(path1, pSockets, dtb) == -1){
+					int res = parsearArchivo(path1, pSockets, &dtb);
+					if(res == -1){
 						// TODO: avisar que termino el archivo al SAFA
 						log_info(logger, "Fin de archivo");
 						sleep(1);
 						enviarHeader(socketSAFA, "", SAFA_MOVER_EXIT);
 						enviarDtb(socketSAFA, dtb);
-					}else {
-						dtb->programCounter ++;
-						if(dtb->programCounter == self->rafaga){
-							enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
-							enviarDtb(socketSAFA, dtb);
-						}
+					}else if(res == 2){
+						enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
+						enviarDtb(socketSAFA, dtb);
 						sleep(1);
 					}
-
 					free(path1);
-
 				}
+				break;
+			}
+			case WAIT_ESPERAR:{
+				enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
+				enviarDtb(socketSAFA, dtb);
+				puts("Wait Esperar");
 				break;
 			}
 			default: break;

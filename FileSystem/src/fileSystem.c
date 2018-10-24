@@ -381,11 +381,11 @@ void escucharMensajesDam(){
 				free(header);
 				if(!crearArchivo(path, numLineas)){
 					puts("Error al crear el archivo");
-					break;
+//					break;
 				}
 				enviarHeader(socketDam, "",MDJ_CREACION_ARCHIVO_OK);
 				enviarHeader(socketDam,"", id);
-				printf("Archivo: %s - CREADO\n\n", path);
+				printf("Archivo: %s - CREADO\n\tId:%d\n", path,id);
 				free(path);
 				free(header);
 				break;
@@ -423,7 +423,7 @@ int main(void) {
 	iniciarFileSystem();
 
 	// ------TEST------
-	crearArchivo("equipos/River.txt", 6);
+//	crearArchivo("equipos/River.txt", 6);
 //
 //	sleep(2);
 //

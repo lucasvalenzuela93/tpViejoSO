@@ -52,6 +52,6 @@ enum RESPUESTAS_PARSER {
 };
 
 
-int parsearLinea(char*, parserSockets*, DTB*);
+int parsearLinea(char*, parserSockets*, DTB**);
 
 #endif /* GENERALES_PARSER_H_ */

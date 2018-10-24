@@ -436,7 +436,6 @@ void recibirMensajesCpu(void * cpuVoid){
 					char* recurso = malloc(header->largo);
 					recibirMensaje(cpu->socket, header->largo, &recurso);
 					printf("Pedir recurso DTB:%d -- %s\n", id, recurso);
-					printf("Tam eject: %d\n", list_size(colaEjecucion));
 //					DTB* dtbSolicitante = (DTB*) list_find_with_param(colaEjecucion, (void*) id, buscarDTBporIdInt);
 					if(retenerRecurso(recurso, id) == 1){
 						// AVISAR AL CPU QUE SALIO BIEN LA PETICION
@@ -454,11 +453,8 @@ void recibirMensajesCpu(void * cpuVoid){
 				case SAFA_MOVER_EXIT:{
 					dtb = recibirDtb(cpu->socket);
 					printf("Id dtb exit: %d", dtb->idGdt);
-					if(list_size(colaEjecucion) == 0){
-						puts("cola ejecucion vacia...");
-					}
-					if(list_size(colaBloqueados) == 0){
-						puts("Cola bloqueados vacia... abortando pasaje a salida");
+					if(list_size(colaEjecucion) == 0 && list_size(colaBloqueados) == 0){
+						puts("Cola bloqueados y ejecucion vacia... abortando pasaje a salida");
 						break;
 					}
 					if(dtb){
