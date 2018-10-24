@@ -14,12 +14,14 @@ int main(void) {
 	puts("Iniciando DAM...");
 	iniciarVariables();
 
-
 	socketSafa = clienteConectarComponente("DAM","S-AFA", puertoSafa, ipSafa);
 
 	socketFileSystem = clienteConectarComponente("DAM", "FILE_SYSTEM", puertoFileSystem, ipFileSystem);
 
 	socketFunesMemory = clienteConectarComponente("DAM", "FUNES_MEMORY", puertoFunesMemory,ipFunesMemory);
+	max_linea = recibirTamMaxLinea();
+	printf("Max_linea: %d\n", max_linea);
+
 
 	pthread_t hiloMDJ;
 	if(pthread_create(&hiloMDJ, NULL, recibirYEnviarMDJ, NULL)){
@@ -29,8 +31,6 @@ int main(void) {
 	}
 
 	esperarConexiones();
-
-
 
 
 	finalizarVariables();
@@ -190,7 +190,7 @@ void recibirYEnviarMDJ(){
 }
 
 void iniciarVariables(){
-	config = config_create(PATH_CONFIG);
+	config = config_create(PATH_CONFIG_DAM);
 	if(config == NULL){
 		puts("Error al abrir archivo de configuracion...");
 		finalizarVariables();
@@ -218,4 +218,14 @@ void finalizarVariables(){
 	shutdown(socketFileSystem,2);
 	shutdown(socketFunesMemory,2);
 	shutdown(socketEscucha,2);
+}
+
+int recibirTamMaxLinea(){
+	char *max_tam_linea = string_new();
+	ContentHeader * header;
+	header = recibirHeader(socketFunesMemory);
+	if(header->id == FM9_ENVIAR_MAX_TAM_LINEA)
+		recibirMensaje(socketFunesMemory, header->largo, &max_tam_linea);
+	int max_tam_linea_int = atoi(max_tam_linea);
+	return max_tam_linea_int;
 }

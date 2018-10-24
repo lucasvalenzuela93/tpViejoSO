@@ -24,7 +24,10 @@ int main(void) {
 	}
 
 	socketDam = clienteConectarComponente("CPU","DAM", puertoDam, ipDam);
+
 	socketFunesMemory = clienteConectarComponente("CPU","FUNES_MEMORY", puertoFunesMemory, ipFunesMemory);
+	max_linea = recibirTamMaxLinea();
+	printf("Max_linea: %d\n", max_linea);
 
 	// ESPERO A RECIBIR EL DTB DE SAFA
 	recibirMensajes();
@@ -173,4 +176,14 @@ void finalizarVariables(){
 	shutdown(socketDam,2);
 	shutdown(socketFunesMemory,2);
 	config_destroy(config);
+}
+
+int recibirTamMaxLinea(){
+	char *max_tam_linea = string_new();
+	ContentHeader * header;
+	header = recibirHeader(socketFunesMemory);
+	if(header->id == FM9_ENVIAR_MAX_TAM_LINEA)
+		recibirMensaje(socketFunesMemory, header->largo, &max_tam_linea);
+	int max_tam_linea_int = atoi(max_tam_linea);
+	return max_tam_linea_int;
 }
