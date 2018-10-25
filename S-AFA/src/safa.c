@@ -49,6 +49,22 @@ int buscarCpuAsignado(void* cpuVoid, void* idGdt){
 	return cpu->gdtAsignado = id;
 }
 
+void desalojarCPU(int idDtb){
+	// DESALOJO AL CPU DEL GDT
+	CPU_struct* cpu = (CPU_struct*) list_remove_by_condition_with_param(listaCpu, (void*) idDtb,filtrarCpu);
+	if(cpu){
+		cpu->gdtAsignado = -1;
+		list_add(listaCpu,(void*) cpu);
+	}
+}
+
+void bloquearDtb(DTB* dtb){
+	dtb->socket = -1;
+	list_add(colaBloqueados, (void*) dtb);
+	desalojarCPU(dtb->idGdt);
+	log_info(logger, "DTB bloqueado -- id: %d --Pc: %d", dtb->idGdt, dtb->programCounter);
+}
+
 int main(void) {
 	inicializarVariables();
 
@@ -123,7 +139,6 @@ void inicializarVariables(){
 	recursos = list_create();
 	bloqueadoRecursos = dictionary_create();
 
-	pthread_mutex_init(&mutexCpu, NULL);
 
 	puts("Variables inicializadas...");
 }
@@ -159,7 +174,7 @@ void* manejarMensajes(){
 
 				// debo pasar el gdt de la lista de bloqueados a la lista de ready
 				DTB* dtb = list_find_with_param(colaBloqueados, (void*) header-> id, buscarDTBporIdInt);
-				printf("Id Dtb a desbloquear: %d\n", header->id);
+
 				if(dtb){
 						list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporIdInt);
 						if(dtb->flagInicio == 0){
@@ -176,34 +191,15 @@ void* manejarMensajes(){
 								list_add(colaReady,(void*) dtb);
 							}
 						}else {
-							puts("Desbloqueo DTB normal");
 							list_add(colaReady, (void*) dtb);
 						}
-
+						printf("Id DTB desbloqueado: %d\n", header->id);
 				}else{
 					printf("No existe DTB con id: %d en la cola de bloqueados\n", header->id);
 				}
 				break;
 			}
-			case MDJ_PATH_GET_OK:{
-				puts("Path encontrado");
-				ContentHeader *header = recibirHeader(socket_dam);
-				DTB *dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporIdInt);
-				if(dtb){
-					list_add(colaReady, (void*) dtb);
-				}
-				break;
-			}
-			case MDJ_PATH_GET_ERROR:{
-				puts("path error");
-				ContentHeader *header = recibirHeader(socket_dam);
-				// en el header recibo el id del DTB
-				DTB *dtb = (DTB*) list_remove_by_condition_with_param(colaBloqueados, (void*) header->id, buscarDTBporIdInt);
-				if(dtb){
-					list_add(colaExit, (void*) dtb);
-				}
-				break;
-			}
+
 			default: {
 				break;
 			}
@@ -212,9 +208,7 @@ void* manejarMensajes(){
 	puts("Finalizo thread de mensajes");
 }
 
-void* manejarColas(){
-	int totalEnMemoria;
-
+void agregarDummy(){
 	// agrego el DTB Dummy a Ready
 	DTB* dummy = (DTB*) malloc(sizeof(DTB));
 	dummy->flagInicio = 0;
@@ -227,60 +221,71 @@ void* manejarColas(){
 	dummy->archivos = list_create();
 
 	list_add(colaReady, (void*)dummy);
+}
 
-	while(done == 0){
-		totalEnMemoria = 0;
-		totalEnMemoria += list_size(colaReady) - 1;
-		totalEnMemoria += list_size(colaEjecucion);
-		totalEnMemoria += list_size(colaBloqueados);
-
-		if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
-			// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
-			// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
-			int flagDummy = 0;
-			DTB* dummy = (DTB*) list_find_with_param(colaReady, (void*) flagDummy, buscarDTBDummy);
-			// CHEQUEO QUE EL DUMMY ESTE LIBERADO
-			if(dummy && dummy->idGdt == -1 && dummy->flagInicio == 0){
-				list_remove_by_condition_with_param(colaReady, (void*) flagDummy, buscarDTBDummy);
-				DTB* aux = (DTB*) list_get(colaNew, 0);
-				free(dummy->pathScript);
-				dummy->pathScript = malloc(strlen(aux->pathScript) + 1);
-				strcpy(dummy->pathScript, aux->pathScript);
-				dummy->pathScript[strlen(aux->pathScript)] = '\0';
-				dummy->idGdt = aux->idGdt;
-				list_add(colaReady, (void*) dummy);
-			}
+void ejecutarDummySiHaceFalta(){
+	int totalEnMemoria = 0;
+	totalEnMemoria += list_size(colaReady) - 1;
+	totalEnMemoria += list_size(colaEjecucion);
+	totalEnMemoria += list_size(colaBloqueados);
+	if(totalEnMemoria < multiprogramacion && list_size(colaNew) > 0){
+		// TENGO LUGAR EN LA COLA DE READY PARA PONER NUEVOS GDT
+		// (EL GRADO DE MULTIPROGRAMACION ME LO PERMITE)
+		int flagDummy = 0;
+		DTB* dummy = (DTB*) list_find_with_param(colaReady, (void*) flagDummy, buscarDTBDummy);
+		// CHEQUEO QUE EL DUMMY ESTE LIBERADO
+		if(dummy && dummy->idGdt == -1 && dummy->flagInicio == 0){
+			list_remove_by_condition_with_param(colaReady, (void*) flagDummy, buscarDTBDummy);
+			DTB* aux = (DTB*) list_get(colaNew, 0);
+			free(dummy->pathScript);
+			dummy->pathScript = malloc(strlen(aux->pathScript) + 1);
+			strcpy(dummy->pathScript, aux->pathScript);
+			dummy->pathScript[strlen(aux->pathScript)] = '\0';
+			dummy->idGdt = aux->idGdt;
+			list_add(colaReady, (void*) dummy);
 		}
+	}
+}
+
+int ejecutarDtb(DTB* dtb, CPU_struct* cpu){
+	if(dtb->idGdt != -1 && dtb->socket == -1){
+		// REMUEVO EL PRIMER ELEMENTO DE LA COLA DE READY UNA VEZ QUE SE
+		// QUE SI ES EL DUMMY ESTA ASIGNADO
+		cpu->gdtAsignado = dtb->idGdt;
+		enviarHeader(cpu->socket,"", ENVIAR_DTB);
+		enviarDtb(cpu->socket, dtb);
+		dtb->socket = cpu->socket;
+		list_add(colaEjecucion, (void*) dtb);
+		printf("enviado a ejecutar, id: %d---socket: %d---flag: %d\n",dtb->idGdt, dtb->socket,dtb->flagInicio);
+		return 1;
+	}
+	return -1;
+}
+
+void ejecutarFifo(){
+	if(list_size(colaReady) > 0 && list_size(listaCpu) > 0){
+	int sinAsignar = -1;
+	CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
+	if(cpu && cpu->gdtAsignado == -1){
+		list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
+		// puedo asignar un CPU para que ejecute
+		// saco el primer elemento de la cola ready para pasarlo a la cola de ejecucion
+		DTB* dtb = (DTB*) list_remove(colaReady, 0);
+		// le asigno el id del gdt al cpu y lo envio
+		if(ejecutarDtb(dtb, cpu) == -1){
+			list_add(colaReady,(void*) dtb);
+		}
+		list_add(listaCpu, (void*) cpu);
+	}
+}
+}
+
+void* manejarColas(){
+	agregarDummy();
+	while(done == 0){
+		ejecutarDummySiHaceFalta();
 		if(strcmp(algoritmo,"FIFO") == 0){
-			// compruebo si hay algun CPU sin un GDT asignado
-
-			if(list_size(colaReady) > 0 && list_size(listaCpu) > 0){
-				int sinAsignar = -1;
-				pthread_mutex_lock(&mutexCpu);
-				CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
-				if(cpu && cpu->gdtAsignado == -1){
-					list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
-					// puedo asignar un CPU para que ejecute
-					// saco el primer elemento de la cola ready para pasarlo a la cola de ejecucion
-					DTB* dtb = (DTB*) list_remove(colaReady, 0);
-					// le asigno el id del gdt al cpu y lo envio
-					if(dtb->idGdt != -1 && dtb->socket == -1){
-						// REMUEVO EL PRIMER ELEMENTO DE LA COLA DE READY UNA VEZ QUE SE
-						// QUE SI ES EL DUMMY ESTA ASIGNADO
-						cpu->gdtAsignado = dtb->idGdt;
-						enviarHeader(cpu->socket,"", ENVIAR_DTB);
-						enviarDtb(cpu->socket, dtb);
-						dtb->socket = cpu->socket;
-						list_add(colaEjecucion, (void*) dtb);
-						printf("enviado a ejecutar, id: %d---socket: %d---flag: %d\n",dtb->idGdt, dtb->socket,dtb->flagInicio);
-					}else{
-						list_add(colaReady,(void*) dtb);
-					}
-					list_add(listaCpu, (void*) cpu);
-				}
-				pthread_mutex_unlock(&mutexCpu);
-
-			}
+			ejecutarFifo();
 		}
 		usleep(600 * 1000);
 	}
@@ -339,9 +344,7 @@ void conectarComponentes(){
 					log_error(logger, "Error al crear hilo de mensajes");
 					exit(1);
 				}
-				pthread_mutex_lock(&mutexCpu);
 				list_add(listaCpu, (void*)CPU);
-				pthread_mutex_unlock(&mutexCpu);
 				nextCpuId ++;
 				printf("Se conecto CPU con id: %d \n", CPU->id);
 
@@ -368,7 +371,6 @@ void conectarComponentes(){
 
 }
 
-
 int retenerRecurso(char* recurso,int idDtb){
 	Recurso* rec = (Recurso*) list_find_with_param(recursos, (void*) recurso, buscarRecurso);
 	if(rec){
@@ -376,33 +378,61 @@ int retenerRecurso(char* recurso,int idDtb){
 		if(rec->cantidad > 0){
 			puts("Wait ok");
 			rec->cantidad --;
-			list_add(recursos, (void*) rec);
-
 		}else if(rec->cantidad == 0){
-			t_list *listaBloqueados = (t_list*) dictionary_remove(bloqueadoRecursos,rec->nombre);
-			if(listaBloqueados != NULL){
-				list_add(listaBloqueados, (void*) idDtb);
-				dictionary_put(bloqueadoRecursos, rec->nombre, (void*) listaBloqueados);
-			}else {
-				t_list* nuevaColaBloqueados = list_create();
-				list_add(nuevaColaBloqueados, (void*) idDtb);
-				dictionary_put(bloqueadoRecursos,rec->nombre ,(void*) nuevaColaBloqueados);
-			}
 			puts("wait bloquear");
-			free(rec);
-			return -1;
+			DTB* dtb = (DTB*) list_find_with_param(colaEjecucion,(void*) idDtb, buscarDTBporIdInt);
+			if(dtb){
+				list_add(rec->bloqueados, (void*) idDtb);
+				list_add(recursos, (void*) rec);
+				return -1;
+			}else {
+				puts("No encontre el DTB en ejecucion");
+			}
+
 		}
+		list_add(recursos, (void*) rec);
 	}else{
 		Recurso *nuevoRecurso = (Recurso*) malloc(sizeof(Recurso));
 		nuevoRecurso->nombre = string_duplicate(recurso);
 		nuevoRecurso->cantidad = 0;
+		nuevoRecurso->bloqueados = list_create();
 
 		list_add(recursos, (void*) nuevoRecurso);
 		puts("wait crear");
 	}
-	free(rec);
 	return 1;
+}
 
+int liberarRecurso(char* r, int idDtb, int socketCpu){
+	Recurso *recurso = (Recurso*) list_find_with_param(recursos, (void*) r, buscarRecurso);
+	if(recurso){
+		list_remove_by_condition_with_param(recursos,(void*)recurso , buscarRecurso);
+		if(recurso->cantidad == 0 && list_size(recurso->bloqueados) > 0){
+			int id = (int) list_remove(recurso->bloqueados, 0);
+
+			DTB* dtb = (DTB*) list_find_with_param(colaBloqueados, (void*) id, buscarDTBporIdInt);
+			if(dtb){
+				list_remove_by_condition_with_param(colaBloqueados, (void*) dtb->idGdt, buscarDTBporIdInt);
+				printf("Desbloqueo DTB -- Id: %d\n", id);
+				list_add(colaReady, (void*) dtb);
+				printf("Recurso: %s - liberado para id: %d\n", recurso, id);
+			}else{
+				printf("No encontre DTB con Id: %d en la cola de bloqueados\n", dtb->idGdt);
+			}
+		}
+		recurso->cantidad ++;
+		list_add(recursos, (void*) recurso);
+	} else {
+		Recurso* rec = (Recurso*) malloc(sizeof(Recurso));
+		rec->nombre = string_duplicate(r);
+		rec->cantidad = 1;
+		rec->bloqueados = list_create();
+
+		list_add(recursos, (void*) rec);
+		printf("Recurso: %s - CREADO\n", rec);
+	}
+
+	return 1;
 }
 
 void recibirMensajesCpu(void * cpuVoid){
@@ -411,35 +441,35 @@ void recibirMensajesCpu(void * cpuVoid){
 	DTB *dtb, *aux;
 	while(true){
 		header = recibirHeader(cpu->socket);
-		// TODO -> recibirMensajes del CPU
 			switch(header->id){
 				case SAFA_BLOQUEAR_CPU:{
 					dtb = recibirDtb(cpu->socket);
-					if(list_size(colaEjecucion) == 0){
-						puts("cola ejecucion vacia");
-						break;
-					}
 					if(dtb){
 						aux = (DTB*) list_find_with_param(colaEjecucion, (void*) dtb->idGdt,buscarDTBporIdInt);
 						if(aux){
-						list_remove_by_condition_with_param(colaEjecucion,(void*) aux->idGdt, buscarDTBporIdInt);
-						dtb->socket = -1;
-						if(header->largo == strlen("exit")){
-							log_info(logger, "DTB EXIT -- id: %d", dtb->idGdt);
-							list_add(colaExit, (void*) dtb);
-						}else {
-							log_info(logger, "DTB bloqueado -- id: %d", dtb->idGdt);
-							list_add(colaBloqueados, (void*) dtb);
-						}
-
+							list_remove_by_condition_with_param(colaEjecucion,(void*) aux->idGdt, buscarDTBporIdInt);
+							dtb->socket = -1;
+							if(header->largo == strlen("exit")){
+								dtb->socket = -1;
+								list_add(colaExit, (void*) dtb);
+								desalojarCPU(dtb->idGdt);
+								log_info(logger, "DTB EXIT -- id: %d", dtb->idGdt);
+							}else {
+								bloquearDtb(dtb);
+							}
+						} else if(header->largo == strlen("exit")){
+							aux = (DTB*) list_find_with_param(colaBloqueados, (void*) dtb->idGdt, buscarDTBporIdInt);
+							if(aux){
+								list_remove_by_condition_with_param(colaBloqueados, (void*) dtb->idGdt, buscarDTBporIdInt);
+								dtb->socket = -1;
+								desalojarCPU(dtb);
+								list_add(colaExit, (void*) dtb);
+								log_info(logger, "DTB EXIT -- id: %d", dtb->idGdt);
+							}
+						} else {
+							printf("No se encontro el DTB con id: %d en la cola de ejecucion\n", dtb->idGdt);
 						}
 					}
-					// DESALOJO AL CPU DEL GDT
-					pthread_mutex_lock(&mutexCpu);
-					list_remove_by_condition_with_param(listaCpu, (void*) cpu->id,buscarCPUporId);
-					cpu->gdtAsignado = -1;
-					list_add(listaCpu,(void*) cpu);
-					pthread_mutex_unlock(&mutexCpu);
 					break;
 				}
 				case SAFA_PEDIR_RECURSO:{
@@ -447,50 +477,29 @@ void recibirMensajesCpu(void * cpuVoid){
 					int id = header->id;
 					char* recurso = malloc(header->largo);
 					recibirMensaje(cpu->socket, header->largo, &recurso);
-					printf("Pedir recurso DTB:%d -- %s\n", id, recurso);
+
 					if(retenerRecurso(recurso, id) == 1){
 						// AVISAR AL CPU QUE SALIO BIEN LA PETICION
-						puts("PEDIDO OK");
+						printf("Recurso:%s, OTORGADO a Id: %d\n", recurso, id);
 						enviarHeader(cpu->socket,"", WAIT_OK);
 					}else {
 						// AVISAR AL CPU QUE DEBE BLOQUEARSE
-						puts("PEDIDO BLOQUEAR");
+						printf("DTB: %d BLOQUEADO esperando recurso: %s\n", id, recurso);
 						enviarHeader(cpu->socket, "", WAIT_ESPERAR);
 					}
 					free(recurso);
 					break;
 				}
-				case SAFA_MOVER_EXIT:{
-					dtb = recibirDtb(cpu->socket);
-					printf("Id dtb exit: %d", dtb->idGdt);
-					if(list_size(colaEjecucion) == 0 && list_size(colaBloqueados) == 0){
-						puts("Cola bloqueados y ejecucion vacia... abortando pasaje a salida");
-						break;
+				case SAFA_LIBERAR_RECURSO:{
+					header = recibirHeader(cpu->socket);
+					int id = header->id;
+					char* recurso = malloc(header->largo);
+					recibirMensaje(cpu->socket, header->largo, &recurso);
+
+					if(liberarRecurso(recurso, id, cpu->socket) == 1){
+						enviarHeader(cpu->socket, "", SIGNAL_OK);
 					}
-					if(dtb){
-						aux = (DTB*) list_find_with_param(colaEjecucion, (void*) dtb->idGdt,buscarDTBporIdInt);
-						if(aux){
-						list_remove_by_condition_with_param(colaEjecucion,(void*) aux->idGdt, buscarDTBporIdInt);
-						dtb->socket = -1;
-						list_add(colaExit, (void*) dtb);
-						log_info(logger, "DTB movido a EXIT -- id: %d", dtb->idGdt);
-						}else {
-							aux = (DTB*) list_remove_by_condition_with_param(colaBloqueados,(void*) dtb->idGdt, buscarDTBporIdInt);
-							if(aux){
-								dtb->socket = -1;
-								list_add(colaExit, (void*) dtb);
-								log_info(logger, "DTB movido a EXIT -- id: %d", dtb->idGdt);
-							}else {
-								puts("DTB no encontrado en bloqueados, donde estara??");
-							}
-						}
-					}
-					// DESALOJO AL CPU DEL GDT
-					pthread_mutex_lock(&mutexCpu);
-					list_remove_by_condition_with_param(listaCpu, (void*) cpu->id,buscarCPUporId);
-					cpu->gdtAsignado = -1;
-					list_add(listaCpu,(void*) cpu);
-					pthread_mutex_unlock(&mutexCpu);
+					free(recurso);
 					break;
 				}
 				default: break;

@@ -39,12 +39,12 @@ int wait(int socketSafa, char* recurso,DTB* dtb){
 	return 3;
 }
 int signal(int socketSafa, char* recurso, DTB* dtb){
+	printf("\tSIGNAL -- %s --Id: %d\n", recurso, dtb->idGdt);
 	// LE AVISO A SAFA QUE QUIERO LIBERAR UN RECURSO
 	enviarHeader(socketSafa,recurso,SAFA_LIBERAR_RECURSO);
-	enviarHeader(socketSafa,"",dtb->idGdt);
+	enviarHeader(socketSafa,recurso,dtb->idGdt);
 	enviarMensaje(socketSafa,recurso);
-	ContentHeader *header = recibirHeader(socketSafa);
-	return header->id == RTA_OK ? SIGNAL_OK : SIGNAL_ERROR;
+	return 3;
 }
 
 int concentrar(){
@@ -139,5 +139,6 @@ int parsearLinea(char* linea, parserSockets *sockets, DTB* dtbo){
 //			char* path = string_duplicate(split[1]);
 			return borrar(sockets->socketDam, sockets->socketSafa, split[1], dtbo);
 		}
+		return -1;
 	}
 }

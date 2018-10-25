@@ -36,6 +36,10 @@ int main(void) {
 	max_linea = recibirTamMaxLinea();
 	printf("Max_linea: %d\n", max_linea);
 
+	pSockets->socketDam = socketDam;
+	pSockets->socketFm9 = socketFunesMemory;
+	pSockets->socketSafa = socketSAFA;
+
 	// ESPERO A RECIBIR EL DTB DE SAFA
 	recibirMensajes();
 
@@ -68,11 +72,15 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	// TODO: recibir el tamaño de linea del FM9
 	while(i < max_linea){
 		c = (char) fgetc(file);
+		if(c == EOF){
+			log_info(logger,"Fin de archivo -- %s\n", path);
+			free(linea);
+			return 3;
+		}
 
 		if(c == '\n'){
 			if(strlen(linea) == 0){
-				log_info(logger, "Fin de archivo");
-
+				log_info(logger,"Fin de archivo -- %s\n", path);
 				free(linea);
 				return 3;
 			}
@@ -92,12 +100,12 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 						break;
 					}
 					case 3:{
-						pc ++;
+						dtbo->programCounter ++;
 						free(linea);
+						sleep(1);
 						return 4;
 					}
 					default: {
-						printf("Respuesta default: %d\n", pars);
 	//					free(linea);
 	//					return 3;
 						break;
@@ -125,27 +133,23 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 					break;
 				}
 				case 3:{
-					pc ++;
+					dtbo->programCounter ++;
 					free(linea);
+					sleep(1);
 					return 4;
 				}
 				default: {
-					printf("Respuesta default: %d\n", pars);
 //					free(linea);
 //					return 3;
 					break;
 				}
 			}
 		}else{
+			log_info(logger,"Fin de archivo -- %s\n", path);
 			free(linea);
 			return 3;
 		}
 	}
-//	if(dtbo->programCounter == self->rafaga){
-//		printf("DESALOJO DTB: %d\n\tProgram Counter: %d\n", dtbo->idGdt, dtbo->programCounter);
-//		free(linea);
-//		return 2;
-//	}
 	free(linea);
 	return 1;
 }
@@ -168,18 +172,23 @@ void decidirAccion(DTB* dtb, int res){
 			break;
 		}
 		case 4:{
-			puts("Espero respuesta");
+			// esperar respuesta
 			break;
 		}
 	}
 }
 
+void ejecutarNormal(DTB* dtb){
+	char* path1 = string_new();
+	path1 = string_duplicate("test.txt");
+	int res = parsearArchivo(path1, pSockets, dtb);
+	decidirAccion(dtb, res);
+	free(path1);
+}
+
 void recibirMensajes(){
 	DTB* dtb;
-	parserSockets *pSockets = (parserSockets*) malloc(sizeof(parserSockets));
-	pSockets->socketDam = socketDam;
-	pSockets->socketFm9 = socketFunesMemory;
-	pSockets->socketSafa = socketSAFA;
+
 	ContentHeader *header;
 	while(true){
 		header = recibirHeader(socketSAFA);
@@ -188,21 +197,14 @@ void recibirMensajes(){
 				dtb = recibirDtb(socketSAFA);
 				if(dtb->flagInicio == 0){
 					// ES EL DTB DUMMY
-					// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
 					enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
-					// LE ENVIO EL ID DEL GDT Y EL PATH
 					enviarHeader(socketDam,dtb->pathScript,SAFA_ID_GDT_DEL_CPU);
 					enviarMensaje(socketDam, dtb->pathScript);
 					enviarHeader(socketDam, "", dtb->idGdt);
-					// LE DIGO AL SAFA QUE ME BLOQUEE
 					enviarDtbSAFA(dtb, "");
 				}else {
 					// EJECUTO NORMAL
-					char* path1 = string_new();
-					path1 = string_duplicate("test.txt");
-					int res = parsearArchivo(path1, pSockets, dtb);
-					decidirAccion(dtb, res);
-					free(path1);
+					ejecutarNormal(dtb);
 				}
 				break;
 			}
@@ -213,11 +215,12 @@ void recibirMensajes(){
 			}
 			case WAIT_OK:{
 				puts("WAIT OK");
-				char* path1 = string_new();
-				path1 = string_duplicate("test.txt");
-				int res = parsearArchivo(path1, pSockets, dtb);
-				decidirAccion(dtb, res);
-				free(path1);
+				ejecutarNormal(dtb);
+				break;
+			}
+			case SIGNAL_OK:{
+				puts("SIGNAL OK");
+				ejecutarNormal(dtb);
 				break;
 			}
 			default:{
@@ -225,8 +228,6 @@ void recibirMensajes(){
 				break;
 			}
 		}
-
-
 		puts("complete cliclo");
 	}
 	free(dtb);
@@ -253,6 +254,8 @@ void inciarVariables(){
 	self = (InfoCpu*) malloc(sizeof(InfoCpu));
 
 	pthread_mutex_init(&mutexDtb, NULL);
+
+	pSockets = (parserSockets*) malloc(sizeof(parserSockets));
 
 	puts("Variables iniciadas...");
 
