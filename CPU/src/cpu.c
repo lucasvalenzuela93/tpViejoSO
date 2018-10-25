@@ -45,6 +45,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
+
 int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	/*
 	 * 	RESUESTAS:
@@ -54,7 +55,6 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	 * 		 3 - exit
 	 * 		 4 - esperar respuesta
 	 */
-	int tamanioLinea = 128;
 	char* pathF = string_from_format("/home/utnso/workspace/tp-2018-2c-keAprobo/FileSystem/montaje/%s",path);
 	FILE *file = fopen(pathF, "r");
 	char* linea = string_new();
@@ -66,7 +66,7 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	int pc = 0;
 	char c;
 	// TODO: recibir el tamaño de linea del FM9
-	while(i < tamanioLinea){
+	while(i < max_linea){
 		c = (char) fgetc(file);
 
 		if(c == '\n'){
@@ -84,7 +84,7 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 					case 1:{
 						dtbo->programCounter ++;
 						free(linea);
-						return 2;
+						return 1;
 					}
 					case 2:{
 						dtbo->programCounter ++;
@@ -117,7 +117,7 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 				case 1:{
 					dtbo->programCounter ++;
 					free(linea);
-					return 2;
+					return 1;
 				}
 				case 2:{
 					dtbo->programCounter ++;
