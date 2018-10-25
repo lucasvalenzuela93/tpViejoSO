@@ -123,6 +123,8 @@ void inicializarVariables(){
 	recursos = list_create();
 	bloqueadoRecursos = dictionary_create();
 
+	pthread_mutex_init(&mutexCpu, NULL);
+
 	puts("Variables inicializadas...");
 }
 
@@ -254,6 +256,7 @@ void* manejarColas(){
 
 			if(list_size(colaReady) > 0 && list_size(listaCpu) > 0){
 				int sinAsignar = -1;
+				pthread_mutex_lock(&mutexCpu);
 				CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
 				if(cpu && cpu->gdtAsignado == -1){
 					list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
@@ -275,6 +278,7 @@ void* manejarColas(){
 					}
 					list_add(listaCpu, (void*) cpu);
 				}
+				pthread_mutex_unlock(&mutexCpu);
 
 			}
 		}
@@ -335,8 +339,9 @@ void conectarComponentes(){
 					log_error(logger, "Error al crear hilo de mensajes");
 					exit(1);
 				}
-
+				pthread_mutex_lock(&mutexCpu);
 				list_add(listaCpu, (void*)CPU);
+				pthread_mutex_unlock(&mutexCpu);
 				nextCpuId ++;
 				printf("Se conecto CPU con id: %d \n", CPU->id);
 
@@ -430,9 +435,11 @@ void recibirMensajesCpu(void * cpuVoid){
 						}
 					}
 					// DESALOJO AL CPU DEL GDT
+					pthread_mutex_lock(&mutexCpu);
 					list_remove_by_condition_with_param(listaCpu, (void*) cpu->id,buscarCPUporId);
 					cpu->gdtAsignado = -1;
 					list_add(listaCpu,(void*) cpu);
+					pthread_mutex_unlock(&mutexCpu);
 					break;
 				}
 				case SAFA_PEDIR_RECURSO:{
@@ -441,7 +448,6 @@ void recibirMensajesCpu(void * cpuVoid){
 					char* recurso = malloc(header->largo);
 					recibirMensaje(cpu->socket, header->largo, &recurso);
 					printf("Pedir recurso DTB:%d -- %s\n", id, recurso);
-//					DTB* dtbSolicitante = (DTB*) list_find_with_param(colaEjecucion, (void*) id, buscarDTBporIdInt);
 					if(retenerRecurso(recurso, id) == 1){
 						// AVISAR AL CPU QUE SALIO BIEN LA PETICION
 						puts("PEDIDO OK");
@@ -451,7 +457,6 @@ void recibirMensajesCpu(void * cpuVoid){
 						puts("PEDIDO BLOQUEAR");
 						enviarHeader(cpu->socket, "", WAIT_ESPERAR);
 					}
-//					free(dtbSolicitante);
 					free(recurso);
 					break;
 				}
@@ -481,9 +486,11 @@ void recibirMensajesCpu(void * cpuVoid){
 						}
 					}
 					// DESALOJO AL CPU DEL GDT
+					pthread_mutex_lock(&mutexCpu);
 					list_remove_by_condition_with_param(listaCpu, (void*) cpu->id,buscarCPUporId);
 					cpu->gdtAsignado = -1;
 					list_add(listaCpu,(void*) cpu);
+					pthread_mutex_unlock(&mutexCpu);
 					break;
 				}
 				default: break;

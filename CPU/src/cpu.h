@@ -36,7 +36,10 @@ int max_linea;
 pthread_t *hiloMensajes;
 InfoCpu *self;
 
+pthread_mutex_t mutexDtb;
+
 int ejecutar = 0;
+int numLinea = 0;
 
 void inciarVariables();
 void finalizarVariables();

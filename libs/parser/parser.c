@@ -36,7 +36,7 @@ int wait(int socketSafa, char* recurso,DTB* dtb){
 	enviarHeader(socketSafa,recurso,SAFA_PEDIR_RECURSO);
 	enviarHeader(socketSafa,recurso,dtb->idGdt);
 	enviarMensaje(socketSafa,recurso);
-	return 1;
+	return 3;
 }
 int signal(int socketSafa, char* recurso, DTB* dtb){
 	// LE AVISO A SAFA QUE QUIERO LIBERAR UN RECURSO
@@ -57,11 +57,8 @@ int flush(int socketDam,int socketSafa, char* path, DTB* dtb){
 //	}
 	enviarHeader(socketDam,path,DAM_FLUSH);
 	enviarMensaje(socketDam, path);
-
-	// LE AVISO AL SAFA Q ME BLOQUEE
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU_RETENCION);
-	enviarDtb(socketSafa, dtb);
-	return FLUSH_OK;
+	// DEVUELVO 1 PARA QUE SE BLOQUEE EL DTB
+	return 1;
 }
 
 int closeOp(int socketFm9, char* path, DTB* dtb){
@@ -81,9 +78,7 @@ int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
 	enviarHeader(socketDam,"", dtb->idGdt);
 	int lineas = atoi(cantLineas);
 	enviarHeader(socketDam,"",lineas);
-	// BLOQUEO AL DTB
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
-	enviarDtb(socketSafa, dtb);
+	// DEVUELVO 1 PARA QUE SE BLOQUEE EL DTB
 	return 1;
 }
 
@@ -96,9 +91,7 @@ int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
 	enviarHeader(socketDam, path, dtb->idGdt);
 	// ENVIO EL MENSAJE
 	enviarMensaje(socketDam, path);
-	// UNA VEZ ENVIADO TODOS LOS DATOS LE DIGO AL DAM QUE BLOQUEE EL DTB
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
-	enviarDtb(socketSafa, dtb);
+	// DEVUELVO 1 PARA QUE SE BLOQUEE EL DTB
 	return 1;
 
 }
@@ -107,11 +100,13 @@ int parsearLinea(char* linea, parserSockets *sockets, DTB* dtbo){
 	if(!string_starts_with(linea,"#")){
 		char** split = string_split(linea, " ");
 		char* operacion = split[0];
-//		char* arg1 = split[1],
-//				arg2 = split[2],
-//				arg3 = split[3];
-		// PATH ABIERTO = 0 -> EL PATH ESTA CERRADO
-		// PATH ABIERTO = 1 -> EL PATH ESTA ABIERTO
+		/*
+		 * 	RETURNS:
+		 * 		 1 - pedir bloqueo
+		 * 		 2 - continuar
+		 * 		-1 - error
+		 * 		 3 - esperar respuesta
+		 */
 		if(strcmp(operacion, "abrir") == 0){
 			return abrir(sockets->socketDam, split[1], dtbo);
 		}
