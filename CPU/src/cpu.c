@@ -10,29 +10,20 @@
 
 #include "cpu.h"
 
+void enviarDtbSAFA(DTB* dtb,char* tipo){
+	pthread_mutex_lock(&mutexDtb);
+	enviarHeader(socketSAFA, tipo, SAFA_BLOQUEAR_CPU);
+	enviarDtb(socketSAFA, dtb);
+	pthread_mutex_unlock(&mutexDtb);
+}
+
 int main(void) {
 	puts("Iniciando CPU...");
 	inciarVariables();
 
-//	 DTB* dtb = (DTB*) malloc(sizeof(DTB));
-//   dtb->archivos = list_create();
-//   dtb->recursos = list_create();
-//   dtb->idGdt = 1;
-//   dtb->flagInicio = 1;
-//   dtb->pathScript = string_duplicate("sanLorenzo.bin");
-//   dtb->socket = -1;
-//   dtb->programCounter = 0;
-//   list_add(dtb->recursos, (void*) "Conmebol");
-//   list_add(dtb->recursos, (void*) "Conmebol1");
-//   list_add(dtb->archivos, (void*) "jugadores.bin");
-//
-//   resDtb* aux = dtbToAux(dtb);
-//   DTB* Dtb = auxToDtb(aux);
-//   printf("%s", dtb->pathScript);
-
 	socketSAFA = clienteConectarComponente("CPU","S-AFA", puertoSafa, ipSafa);
 	// RECIBO EL HEADER DEL SAFA CON MI ID Y LA RAFAGA
-	if(recv(socketSAFA, &self, sizeof(InfoCpu), 0) < 0){
+	if(recv(socketSAFA, self, sizeof(InfoCpu), 0) < 0){
 		puts("Error al recibir informacion del handshake con el S-AFA");
 		close(socketSAFA);
 		config_destroy(config);
@@ -54,8 +45,16 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
-	int tamanioLinea = 128;
+
+int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
+	/*
+	 * 	RESUESTAS:
+	 * 		-1 - error
+	 * 		 1 - bloquear
+	 * 		 2 - desalojar
+	 * 		 3 - exit
+	 * 		 4 - esperar respuesta
+	 */
 	char* pathF = string_from_format("/home/utnso/workspace/tp-2018-2c-keAprobo/FileSystem/montaje/%s",path);
 	FILE *file = fopen(pathF, "r");
 	char* linea = string_new();
@@ -64,35 +63,115 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtb){
 		return -1;
 	}
 	int i = 0;
+	int pc = 0;
 	char c;
 	// TODO: recibir el tamaño de linea del FM9
-	while(i < tamanioLinea){
+	while(i < max_linea){
 		c = (char) fgetc(file);
 
 		if(c == '\n'){
 			if(strlen(linea) == 0){
-				free(linea);
-				return -1;
-			}
-			string_append_with_format(&linea,"%c", '\0');
-			parsearLinea(linea, parser, dtb);
-			linea = string_new();
+				log_info(logger, "Fin de archivo");
 
-			sleep(2);
+				free(linea);
+				return 3;
+			}
+			if(dtbo->programCounter == pc){
+				printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
+				string_append_with_format(&linea,"%c", '\0');
+				int pars = parsearLinea(linea, parser, dtbo);
+				switch(pars){
+					case 1:{
+						dtbo->programCounter ++;
+						free(linea);
+						return 1;
+					}
+					case 2:{
+						dtbo->programCounter ++;
+						sleep(1);
+						break;
+					}
+					case 3:{
+						pc ++;
+						free(linea);
+						return 4;
+					}
+					default: {
+						printf("Respuesta default: %d\n", pars);
+	//					free(linea);
+	//					return 3;
+						break;
+					}
+				}
+				sleep(1);
+			}else{
+				pc ++;
+			}
+			linea = string_new();
 		}else if(c != EOF){
 			string_append_with_format(&linea,"%c", c);
 		}else if(strlen(linea) > 0){
-			parsearLinea(linea, parser, dtb);
-			free(linea);
-			return -1;
+			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter + 1);
+			int pars = parsearLinea(linea, parser, dtbo);
+			switch(pars){
+				case 1:{
+					dtbo->programCounter ++;
+					free(linea);
+					return 1;
+				}
+				case 2:{
+					dtbo->programCounter ++;
+					sleep(1);
+					break;
+				}
+				case 3:{
+					pc ++;
+					free(linea);
+					return 4;
+				}
+				default: {
+					printf("Respuesta default: %d\n", pars);
+//					free(linea);
+//					return 3;
+					break;
+				}
+			}
 		}else{
 			free(linea);
-			return -1;
+			return 3;
 		}
-
 	}
+//	if(dtbo->programCounter == self->rafaga){
+//		printf("DESALOJO DTB: %d\n\tProgram Counter: %d\n", dtbo->idGdt, dtbo->programCounter);
+//		free(linea);
+//		return 2;
+//	}
 	free(linea);
 	return 1;
+}
+
+void decidirAccion(DTB* dtb, int res){
+	switch(res){
+		case 1:{
+			log_info(logger, "DTB BLOQUEADO -- Id: %d", dtb->idGdt);
+			enviarDtbSAFA(dtb, "");
+			break;
+		}
+		case 2:{
+			log_info(logger, "DTB DESALOJAR -- Id: %d", dtb->idGdt);
+			enviarDtbSAFA(dtb, "desalojar");
+			break;
+		}
+		case 3:{
+			log_info(logger, "DTB EXIT -- Id: %d", dtb->idGdt);
+			enviarDtbSAFA(dtb, "exit");
+			break;
+		}
+		case 4:{
+			puts("Espero respuesta");
+			break;
+		}
+	}
 }
 
 void recibirMensajes(){
@@ -107,10 +186,8 @@ void recibirMensajes(){
 		switch(header->id){
 			case ENVIAR_DTB:{
 				dtb = recibirDtb(socketSAFA);
-				printf("archivos: %d\n", list_size(dtb->archivos));
 				if(dtb->flagInicio == 0){
 					// ES EL DTB DUMMY
-					puts("DTB Dummy");
 					// LE AVISO AL DMA QUE BUSQUE EL ESCRIPTORIO
 					enviarHeader(socketDam,"",CPU_PEDIR_ARCHIVO);
 					// LE ENVIO EL ID DEL GDT Y EL PATH
@@ -118,35 +195,35 @@ void recibirMensajes(){
 					enviarMensaje(socketDam, dtb->pathScript);
 					enviarHeader(socketDam, "", dtb->idGdt);
 					// LE DIGO AL SAFA QUE ME BLOQUEE
-					enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
-					enviarDtb(socketSAFA, dtb);
-					puts("DTB enviado...");
+					enviarDtbSAFA(dtb, "");
 				}else {
 					// EJECUTO NORMAL
-					puts(" DTB Normal");
 					char* path1 = string_new();
 					path1 = string_duplicate("test.txt");
-					if(parsearArchivo(path1, pSockets, dtb) == -1){
-						// TODO: avisar que termino el archivo al SAFA
-						log_info(logger, "Fin de archivo");
-						sleep(1);
-						enviarHeader(socketSAFA, "", SAFA_MOVER_EXIT);
-						enviarDtb(socketSAFA, dtb);
-					}else {
-						dtb->programCounter ++;
-						if(dtb->programCounter == self->rafaga){
-							enviarHeader(socketSAFA,"", SAFA_BLOQUEAR_CPU);
-							enviarDtb(socketSAFA, dtb);
-						}
-						sleep(1);
-					}
-
+					int res = parsearArchivo(path1, pSockets, dtb);
+					decidirAccion(dtb, res);
 					free(path1);
-
 				}
 				break;
 			}
-			default: break;
+			case WAIT_ESPERAR:{
+				enviarDtbSAFA(dtb, "");
+				puts("Wait Esperar");
+				break;
+			}
+			case WAIT_OK:{
+				puts("WAIT OK");
+				char* path1 = string_new();
+				path1 = string_duplicate("test.txt");
+				int res = parsearArchivo(path1, pSockets, dtb);
+				decidirAccion(dtb, res);
+				free(path1);
+				break;
+			}
+			default:{
+				printf("\nId del Header: %d\n", header->id);
+				break;
+			}
 		}
 
 
@@ -174,6 +251,8 @@ void inciarVariables(){
 	puertoFunesMemory = config_get_int_value(config, "PUERTO_FUNES_MEMORY");
 
 	self = (InfoCpu*) malloc(sizeof(InfoCpu));
+
+	pthread_mutex_init(&mutexDtb, NULL);
 
 	puts("Variables iniciadas...");
 

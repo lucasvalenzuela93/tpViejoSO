@@ -185,16 +185,6 @@ void recibirYEnviarMDJ(){
 			enviarHeader(socketSafa,"", header->id);
 			continue;
 		}
-		switch(header->id){
-			case MDJ_CREACION_ARCHIVO_OK:{
-
-				break;
-			}
-			case MDJ_BORRAR_OK:{
-				header = recibirHeader(socketFileSystem);
-
-			}
-		}
 	}
 	free(header);
 }

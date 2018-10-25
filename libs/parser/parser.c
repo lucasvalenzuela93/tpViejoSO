@@ -31,21 +31,12 @@ int asignar(int socketFm9, char** valores, DTB* dtb){
 }
 
 int wait(int socketSafa, char* recurso,DTB* dtb){
+	printf("\tWAIT -- %s\n", recurso);
 	// LE AVISO AL SAFA Q QUIERO PEDIR UN RECURSO
 	enviarHeader(socketSafa,recurso,SAFA_PEDIR_RECURSO);
 	enviarHeader(socketSafa,recurso,dtb->idGdt);
 	enviarMensaje(socketSafa,recurso);
-	// RECIBO LA RESPUESTA DEL SAFA A LA PETICION DEL RECURSO
-	ContentHeader *header = recibirHeader(socketSafa);
-	if(header->id == WAIT_OK){
-		return WAIT_OK;
-	}else if(header->id == WAIT_ESPERAR){
-		// LE DIGO AL SAFA QUE BLOQUEE AL DTB
-		enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
-		enviarDtb(socketSafa, dtb);
-		puts("Wait Esperar");
-		return WAIT_ESPERAR;
-	}
+	return 3;
 }
 int signal(int socketSafa, char* recurso, DTB* dtb){
 	// LE AVISO A SAFA QUE QUIERO LIBERAR UN RECURSO
@@ -66,11 +57,8 @@ int flush(int socketDam,int socketSafa, char* path, DTB* dtb){
 //	}
 	enviarHeader(socketDam,path,DAM_FLUSH);
 	enviarMensaje(socketDam, path);
-
-	// LE AVISO AL SAFA Q ME BLOQUEE
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU_RETENCION);
-	enviarDtb(socketSafa, dtb);
-	return FLUSH_OK;
+	// DEVUELVO 1 PARA QUE SE BLOQUEE EL DTB
+	return 1;
 }
 
 int closeOp(int socketFm9, char* path, DTB* dtb){
@@ -82,6 +70,7 @@ int closeOp(int socketFm9, char* path, DTB* dtb){
 }
 
 int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
+	printf("\tCREAR -- %s\n", path);
 	// ENVIO EL PATH Y EL NUMERO DE LINEAS AL DMA
 	enviarHeader(socketDam, path, DAM_CREAR);
 	enviarMensaje(socketDam,path);
@@ -89,13 +78,12 @@ int crear(int socketDam,int socketSafa, char* path, char* cantLineas, DTB* dtb){
 	enviarHeader(socketDam,"", dtb->idGdt);
 	int lineas = atoi(cantLineas);
 	enviarHeader(socketDam,"",lineas);
-	// BLOQUEO AL DTB
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
-	enviarDtb(socketSafa, dtb);
-	return CREAR_OK;
+	// DEVUELVO 1 PARA QUE SE BLOQUEE EL DTB
+	return 1;
 }
 
 int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
+	printf("\tBORRAR -- %s\n", path);
 	// LE AVISO AL DAM QUE REENVIE UN MENSAJE DE BORRAR
 	enviarHeader(socketDam, path, DAM_BORRAR);
 
@@ -103,53 +91,53 @@ int borrar(int socketDam,int socketSafa, char* path, DTB* dtb){
 	enviarHeader(socketDam, path, dtb->idGdt);
 	// ENVIO EL MENSAJE
 	enviarMensaje(socketDam, path);
-	// UNA VEZ ENVIADO TODOS LOS DATOS LE DIGO AL DAM QUE BLOQUEE EL DTB
-	enviarHeader(socketSafa,"", SAFA_BLOQUEAR_CPU);
-	enviarDtb(socketSafa, dtb);
-	return BORRAR_OK;
+	// DEVUELVO 1 PARA QUE SE BLOQUEE EL DTB
+	return 1;
 
 }
 
-int parsearLinea(char* linea, parserSockets *sockets, DTB* dtb){
+int parsearLinea(char* linea, parserSockets *sockets, DTB* dtbo){
 	if(!string_starts_with(linea,"#")){
 		char** split = string_split(linea, " ");
 		char* operacion = split[0];
-//		char* arg1 = split[1],
-//				arg2 = split[2],
-//				arg3 = split[3];
-		// PATH ABIERTO = 0 -> EL PATH ESTA CERRADO
-		// PATH ABIERTO = 1 -> EL PATH ESTA ABIERTO
+		/*
+		 * 	RETURNS:
+		 * 		 1 - pedir bloqueo
+		 * 		 2 - continuar
+		 * 		-1 - error
+		 * 		 3 - esperar respuesta
+		 */
 		if(strcmp(operacion, "abrir") == 0){
-			return abrir(sockets->socketDam, split[1], dtb);
+			return abrir(sockets->socketDam, split[1], dtbo);
 		}
 		if(strcmp(operacion, "concentrar") == 0){
 			return concentrar();
 		}
 		if(strcmp(operacion, "asignar") == 0){
-			return asignar(sockets->socketFm9,split,dtb);
+			return asignar(sockets->socketFm9,split,dtbo);
 		}
 		if(strcmp(operacion, "wait") == 0){
-			return wait(sockets->socketSafa, split[1], dtb);
+			return wait(sockets->socketSafa, split[1], dtbo);
 		}
 		if(strcmp(operacion, "signal") == 0){
-			return signal(sockets->socketSafa, split[1],dtb);
+			return signal(sockets->socketSafa, split[1],dtbo);
 		}
 		if(strcmp(operacion, "flush") == 0){
-			return flush(sockets->socketDam, sockets->socketSafa, split[1], dtb);
+			return flush(sockets->socketDam, sockets->socketSafa, split[1], dtbo);
 		}
 		if(strcmp(operacion, "close") == 0){
-			return closeOp(sockets->socketFm9, split[1], dtb);
+			return closeOp(sockets->socketFm9, split[1], dtbo);
 		}
 		if(strcmp(operacion, "crear") == 0){
 			if(split[2] == NULL){
 				puts("Error al parsear e split");
 			}
 			char* linea = string_duplicate((char*) split[2]);
-			return crear(sockets->socketDam, sockets->socketSafa, split[1], linea, dtb);
+			return crear(sockets->socketDam, sockets->socketSafa, split[1], linea, dtbo);
 		}
 		if(strcmp(operacion, "borrar") == 0){
 //			char* path = string_duplicate(split[1]);
-			return borrar(sockets->socketDam, sockets->socketSafa, split[1], dtb);
+			return borrar(sockets->socketDam, sockets->socketSafa, split[1], dtbo);
 		}
 	}
 }

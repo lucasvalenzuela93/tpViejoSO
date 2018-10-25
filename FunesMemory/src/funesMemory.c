@@ -19,9 +19,9 @@ int main(void) {
 	socketDam = servidorConectarComponente(socketEscucha, "FUNES_MEMORY", "DAM");
 	enviarTamMaxLinea(socketDam);
 
-	recibirGDT();
-
 	esperarConexiones();
+
+	recibirGDT();
 
 
 	finalizarVariables();

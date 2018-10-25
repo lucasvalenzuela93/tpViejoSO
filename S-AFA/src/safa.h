@@ -78,6 +78,8 @@ t_list *colaEjecucion;
 t_list *colaBloqueados;
 t_list *colaExit;
 
+pthread_mutex_t mutexCpu;
+
 COMANDO comandos[] = {
 		{"hola", cmdHola, "Mostrar hola", 0},
 		{"salir", cmdSalir, "Termina el proceso", 0},
