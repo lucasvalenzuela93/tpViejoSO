@@ -49,6 +49,34 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
+int decidirAccionParseo(DTB* dtbo, int pars){
+	switch(pars){
+		case 1:{
+			dtbo->programCounter ++;
+			dtbo->rafaga --;
+			return 1;
+		}
+		case 2:{
+			dtbo->programCounter ++;
+			dtbo->rafaga --;
+			sleep(1);
+			break;
+		}
+		case 3:{
+			dtbo->programCounter ++;
+			dtbo->rafaga --;
+			sleep(1);
+			return 4;
+		}
+		default: {
+//			free(linea);
+//			return 3;
+			break;
+		}
+	}
+	return -1;
+}
+
 
 int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	/*
@@ -72,6 +100,10 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 	// TODO: recibir el tamaño de linea del FM9
 	while(i < max_linea){
 		c = (char) fgetc(file);
+//		if(dtbo->rafaga == 0){
+//			free(linea);
+//			return 2;
+//		}
 		if(c == EOF){
 			log_info(logger,"Fin de archivo -- %s\n", path);
 			free(linea);
@@ -79,6 +111,10 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 		}
 
 		if(c == '\n'){
+			if(dtbo->rafaga == 0){
+				free(linea);
+				return 2;
+			}
 			if(strlen(linea) == 0){
 				log_info(logger,"Fin de archivo -- %s\n", path);
 				free(linea);
@@ -87,29 +123,9 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 			if(dtbo->programCounter == pc){
 				printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
 				string_append_with_format(&linea,"%c", '\0');
-				int pars = parsearLinea(linea, parser, dtbo);
-				switch(pars){
-					case 1:{
-						dtbo->programCounter ++;
-						free(linea);
-						return 1;
-					}
-					case 2:{
-						dtbo->programCounter ++;
-						sleep(1);
-						break;
-					}
-					case 3:{
-						dtbo->programCounter ++;
-						free(linea);
-						sleep(1);
-						return 4;
-					}
-					default: {
-	//					free(linea);
-	//					return 3;
-						break;
-					}
+				int pars = decidirAccionParseo(dtbo, parsearLinea(linea, parser, dtbo));
+				if(pars != -1){
+					return pars;
 				}
 				sleep(1);
 			}else{
@@ -120,29 +136,9 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 			string_append_with_format(&linea,"%c", c);
 		}else if(strlen(linea) > 0){
 			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter + 1);
-			int pars = parsearLinea(linea, parser, dtbo);
-			switch(pars){
-				case 1:{
-					dtbo->programCounter ++;
-					free(linea);
-					return 1;
-				}
-				case 2:{
-					dtbo->programCounter ++;
-					sleep(1);
-					break;
-				}
-				case 3:{
-					dtbo->programCounter ++;
-					free(linea);
-					sleep(1);
-					return 4;
-				}
-				default: {
-//					free(linea);
-//					return 3;
-					break;
-				}
+			int pars = decidirAccionParseo(dtbo, parsearLinea(linea, parser, dtbo));
+			if(pars != -1){
+				return pars;
 			}
 		}else{
 			log_info(logger,"Fin de archivo -- %s\n", path);

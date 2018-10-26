@@ -18,6 +18,7 @@ typedef struct DTB {
 	int programCounter;
 	int flagInicio;
 	int socket;
+	int rafaga;
 	t_list *archivos;
 } __attribute__((packed)) DTB;
 
@@ -28,6 +29,7 @@ typedef struct dtbAux {
 	int socket;
 	int tamanioPath;
 	int tamanioArchivos;
+	int rafaga;
 } __attribute__((packed)) dtbAux;
 
 typedef struct resDtb {

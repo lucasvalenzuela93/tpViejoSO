@@ -267,18 +267,35 @@ void ejecutarFifo(){
 	int sinAsignar = -1;
 	CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
 	if(cpu && cpu->gdtAsignado == -1){
-		list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
-		// puedo asignar un CPU para que ejecute
-		// saco el primer elemento de la cola ready para pasarlo a la cola de ejecucion
-		DTB* dtb = (DTB*) list_remove(colaReady, 0);
-		// le asigno el id del gdt al cpu y lo envio
-		if(ejecutarDtb(dtb, cpu) == -1){
-			list_add(colaReady,(void*) dtb);
+			list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
+			// puedo asignar un CPU para que ejecute
+			// saco el primer elemento de la cola ready para pasarlo a la cola de ejecucion
+			DTB* dtb = (DTB*) list_remove(colaReady, 0);
+			// le asigno el id del gdt al cpu y lo envio
+			if(ejecutarDtb(dtb, cpu) == -1){
+				list_add(colaReady,(void*) dtb);
+			}
+			list_add(listaCpu, (void*) cpu);
 		}
-		list_add(listaCpu, (void*) cpu);
 	}
 }
+
+void ejecutarRR(){
+	int sinAsignar = -1;
+	if(list_size(colaReady) > 0 && list_size(listaCpu) > 0){
+		CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
+		if(cpu && cpu->gdtAsignado == -1){
+			list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
+			DTB* dtb = (DTB*) list_remove(colaReady, 0);
+			dtb->rafaga = quantum;
+			if(ejecutarDtb(dtb, cpu) == -1){
+			list_add(colaReady,(void*) dtb);
+			}
+			list_add(listaCpu, (void*) cpu);
+		}
+	}
 }
+
 
 void* manejarColas(){
 	agregarDummy();
@@ -286,6 +303,8 @@ void* manejarColas(){
 		ejecutarDummySiHaceFalta();
 		if(strcmp(algoritmo,"FIFO") == 0){
 			ejecutarFifo();
+		}else if(strcmp(algoritmo, "RR") == 0){
+			ejecutarRR();
 		}
 		usleep(600 * 1000);
 	}
@@ -454,6 +473,17 @@ void recibirMensajesCpu(void * cpuVoid){
 								list_add(colaExit, (void*) dtb);
 								desalojarCPU(dtb->idGdt);
 								log_info(logger, "DTB EXIT -- id: %d", dtb->idGdt);
+							}else if(header->largo == strlen("desalojar")){
+								dtb->socket = -1;
+								if(strcmp(algoritmo, "VRR") == 0 && dtb->rafaga < quantum && dtb->rafaga > 0){
+									// TODO: mover a la cola de maxiam prioridad vrr
+									log_info(logger, "DTB PUESO EN COLA DE MAYOR PRIORIDAD -- id: %d", dtb->idGdt);
+								} else {
+									dtb->rafaga = 0;
+									list_add(colaReady, (void*) dtb);
+									log_info(logger, "DTB DESALOJADO -- id: %d", dtb->idGdt);
+								}
+								desalojarCPU(dtb->idGdt);
 							}else {
 								bloquearDtb(dtb);
 							}
@@ -776,6 +806,7 @@ int cmdEjecutar(char* path){
 	dtb->flagInicio = 1;
 	dtb->programCounter = 0;
 	dtb->socket = -1;
+	dtb->rafaga = -1;
 	dtb->archivos = list_create();
 
 	list_add(colaNew,(void*) dtb);
