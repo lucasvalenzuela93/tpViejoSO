@@ -35,6 +35,7 @@ int socketSAFA, socketDam, socketFunesMemory;
 int max_linea;
 pthread_t *hiloMensajes;
 InfoCpu *self;
+parserSockets *pSockets;
 
 pthread_mutex_t mutexDtb;
 
@@ -43,7 +44,7 @@ int numLinea = 0;
 
 void inciarVariables();
 void finalizarVariables();
-void escucharMensajesSafa();
+void recibirMensajes();
 int recibirTamMaxLinea();
 
 

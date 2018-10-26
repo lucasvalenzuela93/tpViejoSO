@@ -368,17 +368,14 @@ void escucharMensajesDam(){
 			case DAM_CREAR:{
 				int numLineas, id;
 				// RECIBO ID DTB
-				free(header);
 				header = recibirHeader(socketDam);
 				id = header->id;
 				// RECIBO EL NUMEOR DE LINEAS
-				free(header);
 				header = recibirHeader(socketDam);
 				numLineas = header->id;
 				char* path = malloc(header->largo -1);
 				// RECIBO EL PATH
 				recibirMensaje(socketDam, header->largo, &path);
-				free(header);
 				if(!crearArchivo(path, numLineas)){
 					puts("Error al crear el archivo");
 //					break;
@@ -386,8 +383,6 @@ void escucharMensajesDam(){
 				enviarHeader(socketDam, "",MDJ_CREACION_ARCHIVO_OK);
 				enviarHeader(socketDam,"", id);
 				printf("Archivo: %s - CREADO\n\tId:%d\n", path,id);
-				free(path);
-				free(header);
 				break;
 			}
 			case DAM_BORRAR:{
@@ -406,6 +401,11 @@ void escucharMensajesDam(){
 					enviarHeader(socketDam, "", idDtb);
 					break;
 				}
+				// TEST PARA Q NO SE BLOQUEE LA EJECUCION
+				puts("Archivo borrado");
+				enviarHeader(socketDam, "", MDJ_BORRAR_OK);
+				enviarHeader(socketDam, "", idDtb);
+				// -----------------------------------------
 				free(header);
 				puts("No existe el archivo");
 				break;

@@ -139,7 +139,6 @@ void recibirYEnviarCPU(void* cpuVoid){
 //				sleep(2);
 //				enviarHeader(socketSafa, "", SAFA_DESBLOQUEAR_CPU);
 //				enviarHeader(socketSafa,"", header->id);
-				free(path);
 				break;
 			}
 			case DAM_BORRAR:{
@@ -157,7 +156,6 @@ void recibirYEnviarCPU(void* cpuVoid){
 				enviarHeader(socketFileSystem, path, idDtb);
 				enviarMensaje(socketFileSystem, path);
 				pthread_mutex_unlock(&mutexEnviarMDJ);
-				free(path);
 				break;
 			}
 			case DAM_FLUSH:{
