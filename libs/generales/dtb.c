@@ -29,6 +29,7 @@ resDtb* dtbToAux(DTB* dtb){
 	aux->socket = dtb->socket;
 	aux->tamanioPath = strlen(dtb->pathScript);
 	aux->tamanioArchivos = strlen(archivos);
+	aux->rafaga = dtb->rafaga;
 
 	resDtb* resultado = (resDtb*) malloc(sizeof(resDtb));
 
@@ -47,6 +48,7 @@ DTB* auxToDtb(resDtb* res){
 	dtb->programCounter = res->aux->programCounter;
 	dtb->flagInicio = res->aux->flagInicio;
 	dtb->socket = res->aux->socket;
+	dtb->rafaga = res->aux->rafaga;
 
 	dtb->archivos = list_create();
 	dtb->pathScript = string_duplicate(string_from_format("%s%c", res->path, '\0'));
