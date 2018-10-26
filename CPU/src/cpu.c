@@ -158,7 +158,7 @@ void decidirAccion(DTB* dtb, int res){
 			break;
 		}
 		case 2:{
-			log_info(logger, "DTB DESALOJAR -- Id: %d", dtb->idGdt);
+			log_info(logger, "DTB DESALOJAR -- Id: %d -- RAFAGA: %d", dtb->idGdt, dtb->rafaga);
 			enviarDtbSAFA(dtb, "desalojar");
 			break;
 		}
@@ -176,7 +176,8 @@ void decidirAccion(DTB* dtb, int res){
 
 void ejecutarNormal(DTB* dtb){
 	char* path1 = string_new();
-	path1 = string_duplicate("test.txt");
+	path1 = string_from_format("%s.txt", dtb->pathScript);
+	printf("PATH: %s\n", path1);
 	int res = parsearArchivo(path1, pSockets, dtb);
 	decidirAccion(dtb, res);
 	free(path1);

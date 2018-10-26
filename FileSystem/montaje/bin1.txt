@@ -1,5 +1,8 @@
 crear equipos/SanLorenzo.bin 7
 borrar equipos/SanLorenzo.bin
 wait Conmebol
-crear equipos/Boca.bin 11
 wait Conmebol
+signal Pelota
+crear equipos/Boca.bin 11
+wait Pelota
+crear equipos/Banfield.bin 7
