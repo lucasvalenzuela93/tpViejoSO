@@ -285,11 +285,11 @@ void ejecutarRR(){
 	if(list_size(colaReady) > 0 && list_size(listaCpu) > 0){
 		CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
 		if(cpu && cpu->gdtAsignado == -1){
-				list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
-				DTB* dtb = (DTB*) list_remove(colaReady, 0);
-				dtb->rafaga = quantum;
-				if(ejecutarDtb(dtb, cpu) == -1){
-				list_add(colaReady,(void*) dtb);
+			list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
+			DTB* dtb = (DTB*) list_remove(colaReady, 0);
+			dtb->rafaga = quantum;
+			if(ejecutarDtb(dtb, cpu) == -1){
+			list_add(colaReady,(void*) dtb);
 			}
 			list_add(listaCpu, (void*) cpu);
 		}

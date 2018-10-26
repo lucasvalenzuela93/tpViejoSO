@@ -122,7 +122,6 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 			}
 			if(dtbo->programCounter == pc){
 				printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter);
-				printf("\nEJECUCIONES: %d\n", dtbo->rafaga);
 				string_append_with_format(&linea,"%c", '\0');
 				int pars = decidirAccionParseo(dtbo, parsearLinea(linea, parser, dtbo));
 				if(pars != -1){
@@ -137,7 +136,6 @@ int parsearArchivo(char *path,parserSockets *parser, DTB *dtbo){
 			string_append_with_format(&linea,"%c", c);
 		}else if(strlen(linea) > 0){
 			printf("ProgramCounter de %d -- %d\n", dtbo->idGdt, dtbo->programCounter + 1);
-			printf("\nEJECUCIONES: %d\n", dtbo->rafaga);
 			int pars = decidirAccionParseo(dtbo, parsearLinea(linea, parser, dtbo));
 			if(pars != -1){
 				return pars;
