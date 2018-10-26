@@ -373,7 +373,7 @@ void escucharMensajesDam(){
 				// RECIBO EL NUMEOR DE LINEAS
 				header = recibirHeader(socketDam);
 				numLineas = header->id;
-				char* path = malloc(header->largo -1);
+				char* path = malloc(header->largo);
 				// RECIBO EL PATH
 				recibirMensaje(socketDam, header->largo, &path);
 				if(!crearArchivo(path, numLineas)){

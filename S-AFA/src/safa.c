@@ -135,6 +135,8 @@ void inicializarVariables(){
 	colaEjecucion = list_create();
 	colaBloqueados = list_create();
 	colaExit = list_create();
+	colaReadyVRR = list_create();
+
 
 	recursos = list_create();
 	bloqueadoRecursos = dictionary_create();
@@ -146,13 +148,15 @@ void inicializarVariables(){
 void finalizarVariables(){
 	close(socket_dam);
 	close(socketEscucha);
-	config_destroy(config);
+	list_destroy_and_destroy_elements(colaReadyVRR, free);;
 	list_destroy_and_destroy_elements(colaNew, free);
 	list_destroy_and_destroy_elements(colaReady, free);
 	list_destroy_and_destroy_elements(colaEjecucion, free);
 	list_destroy_and_destroy_elements(colaBloqueados, free);
 	list_destroy_and_destroy_elements(colaExit, free);
 	list_destroy_and_destroy_elements(listaCpu, free);
+
+	config_destroy(config);
 
 	puts("Finalizo S-AFA correctamente...");
 	exit(1);
@@ -256,7 +260,6 @@ int ejecutarDtb(DTB* dtb, CPU_struct* cpu){
 		enviarDtb(cpu->socket, dtb);
 		dtb->socket = cpu->socket;
 		list_add(colaEjecucion, (void*) dtb);
-		printf("enviado a ejecutar, id: %d---socket: %d---flag: %d\n",dtb->idGdt, dtb->socket,dtb->flagInicio);
 		return 1;
 	}
 	return -1;
@@ -274,7 +277,8 @@ void ejecutarFifo(){
 			// le asigno el id del gdt al cpu y lo envio
 			if(ejecutarDtb(dtb, cpu) == -1){
 				list_add(colaReady,(void*) dtb);
-			}
+			} else
+			printf("enviado a ejecutar, id: %d---socket: %d---flag: %d\n",dtb->idGdt, dtb->socket,dtb->flagInicio);
 			list_add(listaCpu, (void*) cpu);
 		}
 	}
@@ -290,10 +294,30 @@ void ejecutarRR(){
 			dtb->rafaga = quantum;
 			if(ejecutarDtb(dtb, cpu) == -1){
 			list_add(colaReady,(void*) dtb);
-			}
+			} else
+			printf("enviado a ejecutar, id: %d---socket: %d---flag: %d\n",dtb->idGdt, dtb->socket,dtb->flagInicio);
 			list_add(listaCpu, (void*) cpu);
 		}
 	}
+}
+
+void ejecutarVRR(){
+	int sinAsignar = -1;
+	if(list_size(colaReadyVRR) > 0 && list_size(listaCpu) > 0){
+		CPU_struct *cpu = (CPU_struct*) list_find_with_param(listaCpu, (void*) sinAsignar, filtrarCpu);
+		if(cpu && cpu->gdtAsignado == -1){
+			list_remove_by_condition_with_param(listaCpu,(void*) sinAsignar ,filtrarCpu);
+			DTB* dtb = (DTB*) list_remove(colaReadyVRR, 0);
+			if(ejecutarDtb(dtb, cpu) == -1){
+			list_add(colaReadyVRR,(void*) dtb);
+			} else
+			log_info(logger, "EJECUTADA COLA MAYOR PRIORIDAD -- ID: %d\n", dtb->idGdt);
+			list_add(listaCpu, (void*) cpu);
+		}
+	} else {
+		ejecutarRR();
+	}
+
 }
 
 
@@ -305,6 +329,8 @@ void* manejarColas(){
 			ejecutarFifo();
 		}else if(strcmp(algoritmo, "RR") == 0){
 			ejecutarRR();
+		}else if(strcmp(algoritmo, "VRR") == 0){
+			ejecutarVRR();
 		}
 		usleep(600 * 1000);
 	}
@@ -454,6 +480,7 @@ int liberarRecurso(char* r, int idDtb, int socketCpu){
 	return 1;
 }
 
+
 void recibirMensajesCpu(void * cpuVoid){
 	CPU_struct *cpu = (CPU_struct*) cpuVoid;
 	ContentHeader *header;
@@ -476,8 +503,9 @@ void recibirMensajesCpu(void * cpuVoid){
 							}else if(header->largo == strlen("desalojar")){
 								dtb->socket = -1;
 								if(strcmp(algoritmo, "VRR") == 0 && dtb->rafaga < quantum && dtb->rafaga > 0){
-									// TODO: mover a la cola de maxiam prioridad vrr
-									log_info(logger, "DTB PUESO EN COLA DE MAYOR PRIORIDAD -- id: %d", dtb->idGdt);
+									list_add(colaReadyVRR, (void*) dtb);
+									desalojarCPU(dtb->idGdt);
+									log_info(logger, "DTB PUESTO EN COLA DE MAYOR PRIORIDAD -- id: %d", dtb->idGdt);
 								} else {
 									dtb->rafaga = 0;
 									list_add(colaReady, (void*) dtb);
@@ -485,7 +513,14 @@ void recibirMensajesCpu(void * cpuVoid){
 								}
 								desalojarCPU(dtb->idGdt);
 							}else {
-								bloquearDtb(dtb);
+								if(strcmp(algoritmo, "VRR") == 0 && dtb->rafaga < quantum && dtb->rafaga > 0){
+									list_add(colaReadyVRR, (void*) dtb);
+									desalojarCPU(dtb->idGdt);
+									log_info(logger, "DTB PUESO EN COLA DE MAYOR PRIORIDAD -- id: %d", dtb->idGdt);
+								}else {
+									bloquearDtb(dtb);
+								}
+
 							}
 						} else if(header->largo == strlen("exit")){
 							aux = (DTB*) list_find_with_param(colaBloqueados, (void*) dtb->idGdt, buscarDTBporIdInt);

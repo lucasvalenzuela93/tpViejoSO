@@ -1,0 +1,8 @@
+crear equipos/SanLorenzo.bin 7
+borrar equipos/SanLorenzo.bin
+signal Conmebol
+signal Pelota
+wait Pelota
+wait Pelota
+borrar equipos/Boca.bin
+crear equipos/Banfield.bin 7

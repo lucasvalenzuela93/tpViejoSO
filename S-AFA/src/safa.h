@@ -75,6 +75,7 @@ t_dictionary* bloqueadoRecursos;
 t_list *listaCpu;
 t_list *colaNew;
 t_list *colaReady;
+t_list *colaReadyVRR;
 t_list *colaEjecucion;
 t_list *colaBloqueados;
 t_list *colaExit;
